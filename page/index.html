@@ -58,6 +58,9 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   .tb-note { border: 1.5px solid var(--ink); border-top: 0; padding: 12px 16px; font-size: 15px; line-height: 1.5; max-width: none; }
   .tb-note[hidden] { display: none; }
   .tb-note b { font-weight: 650; }
+  .sheet h2 .info { vertical-align: 4px; margin-left: 8px; }
+  .sheet-note { grid-column: 1 / -1; margin: -4px 0 20px; padding: 12px 16px; border: 1.5px solid var(--ink); font-size: 15px; line-height: 1.5; max-width: 75ch; }
+  .sheet-note[hidden] { display: none; }
   .tb-value { font-size: 20px; font-weight: 600; line-height: 1.25; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tb-sub { font-size: 12px; color: var(--ink-soft); }
   .title-block h1 { font-size: 22px; margin: 0; line-height: 1.25; letter-spacing: -0.01em; font-weight: 650; }
@@ -209,7 +212,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   function showInfo(key, m) {
     const note = $('#tb-note');
     openInfo = openInfo === key ? null : key;
-    document.querySelectorAll('.info').forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.info === openInfo)));
+    document.querySelectorAll('.info[data-info]').forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.info === openInfo)));
     note.hidden = !openInfo;
     note.innerHTML = openInfo ? infoText(openInfo, m) : '';
   }
@@ -233,8 +236,26 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     </div>`;
   }
 
+  // What each section counts and the rules behind it, matching what the code does.
+  const SHEET_INFO = {
+    'This week, and where you differ': `Each line compares your messages on one project, or messages that name one person, with all your messages. A project needs 25 of your messages and a person 12 mentions before it shows up. A difference only makes the list when it's at least 1.6 times higher or lower than your usual and at least 3 points apart, so 1% against 2% never counts. Each line keeps its three strongest. Projects come from the folder a session ran in; sessions from a general folder go to the project their messages name most. People are matched by name and nickname from your people list. The lines at the top compare this week so far with your four full weeks before it.`,
+    'Where you differ': `A project needs 25 of your messages and a person 12 mentions before a comparison shows up here.`,
+    'When you work': `The calendar has one square per day; darker means more messages you typed. The grid below is the same messages by weekday and hour, in your timezone. A session's length runs from your first message to your last, and a gap over 30 minutes counts as a break.`,
+    'What you work on': `Time is the active time inside your sessions (gaps over 30 minutes don't count), split across projects by how many of your messages went to each. Messages are the ones you typed. The small bars are your messages per week for the last 12 weeks. Day to day holds your own OS or admin work, if you've marked it in config, plus general sessions that name no project.`,
+    'How you sound': `Every message you typed is scored on this machine by a small classifier: tense covers frustrated and stressed, upbeat covers pleased and playful, and anything else counts as flat. The general model only calls a message tense or upbeat when it's fairly sure. The weekly columns show each week's split, and a project needs 25 of your messages to get a row. Tuning replaces the general model with one trained on your own messages.`,
+    'How you write': `Cards are built from messages you sent: the ones your AI read for you in Gmail, Discord, Telegram, WhatsApp, Google Chat or Teams, plus a WhatsApp bridge database if you run one. Messages your AI sent in your name are left out. "To your AI" is built from your prompts. A person or group gets its own card at 30 messages. The check stops a draft when it misses your usual range on two or more measures of a card built from 30+ messages, or breaks a rule you've told your AI twice.`,
+    'The words you use': `Typical words is the middle length of your messages, so a few long pastes don't pull it up. Push back counts messages that open with things like "no", "wrong" or "again", or say "you missed" or "I said". Questions are messages with a question mark. The word and phrase lists skip common words, numbers, links, and pasted code or logs. Filler words come from the list in your config.`,
+    'Who comes up': `Mentions are your messages that name someone from your people list, by name or nickname. Names stay hidden until you press Show names. Typical words and tense share use only the messages that name that person. None of this leaves your machine.`,
+    'What it costs': `API-equivalent means your tokens priced at each model's public per-token rates (input, output, and cache reads and writes). A subscription isn't billed these amounts; it shows what the same work would cost through the API. Your sessions are ones you started; your OS covers scheduled runs, subagents and sessions your automation opened. Tools counts every tool call. Models with no known price show n/a until you add a price in config.`,
+  };
+  let openSheet = null;
+
   function sheet(title, margin, plot) {
-    return `<section class="sheet"><h2>${title}</h2><div class="margin">${margin}</div><div class="plot">${plot}</div></section>`;
+    const note = SHEET_INFO[title];
+    const id = 'si-' + title.toLowerCase().replace(/[^a-z]+/g, '-');
+    const btn = note ? ` <button class="info" type="button" data-sheet="${esc(title)}" aria-expanded="${openSheet === title}" aria-controls="${id}" aria-label="What this section counts">i</button>` : '';
+    const box = note ? `<p class="sheet-note" id="${id}" ${openSheet === title ? '' : 'hidden'}>${note}</p>` : '';
+    return `<section class="sheet"><h2>${title}${btn}</h2>${box}<div class="margin">${margin}</div><div class="plot">${plot}</div></section>`;
   }
 
   function differ(m) {
@@ -332,8 +353,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     const margin = `
       <p class="note"><b>${esc(top.name)}</b> took <b>${pct(top.minutes / projTotal)}</b> of your project time, about ${hrs(top.minutes)}.</p>
       <p class="note">Your top three projects cover <b>${pct(top3)}</b> of it.</p>
-      ${day ? `<p class="note">Running your day took another <b>${hrs(day.minutes)}</b>, ${pct(day.minutes / total)} of all your hours.</p>` : ''}
-      <p class="note quiet">Day to day is your OS itself plus sessions from a general folder that name no project.</p>`;
+      ${day ? `<p class="note">Running your day took another <b>${hrs(day.minutes)}</b>, ${pct(day.minutes / total)} of all your hours.</p>` : ''}`;
     const rows = p.map((x) => `<tr${x.day ? ' class="day"' : ''}>
       <td>${esc(x.name)}</td>
       <td style="width:38%"><span class="bar" style="width:${(x.minutes / max) * 100}%"></span></td>
@@ -569,7 +589,17 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
       e.currentTarget.textContent = on ? 'Hide names' : 'Show names';
     });
     if ($('#share')) $('#share').addEventListener('click', () => openShare(last));
-    document.querySelectorAll('.info').forEach((b) => b.addEventListener('click', () => showInfo(b.dataset.info, last)));
+    document.querySelectorAll('.info[data-info]').forEach((b) => b.addEventListener('click', () => showInfo(b.dataset.info, last)));
+    document.querySelectorAll('.info[data-sheet]').forEach((b) => b.addEventListener('click', () => {
+      const t = b.dataset.sheet;
+      openSheet = openSheet === t ? null : t;
+      document.querySelectorAll('.info[data-sheet]').forEach((x) => {
+        const open = x.dataset.sheet === openSheet;
+        x.setAttribute('aria-expanded', String(open));
+        const n = document.getElementById(x.getAttribute('aria-controls'));
+        if (n) n.hidden = !open;
+      });
+    }));
     if (openInfo) { const k = openInfo; openInfo = null; showInfo(k, last); } // a live redraw keeps the open note
     if ($('#tune')) $('#tune').addEventListener('click', async (e) => {
       const btn = e.currentTarget;
