@@ -38,7 +38,7 @@ test('card: bursts, percentiles, casing and habits', () => {
 });
 
 test('card: email is one send per burst, greetings and sign-offs counted', () => {
-  const rows = [0, 1, 2].map((i) => ({ channel: 'email', chat: 's', ts: `2026-09-0${i + 1}T01:00:00Z`, text: `Hi team,\n\nUpdate ${i}.\n\nThanks,\nJarrhey` }));
+  const rows = [0, 1, 2].map((i) => ({ channel: 'email', chat: 's', ts: `2026-09-0${i + 1}T01:00:00Z`, text: `Hi team,\n\nUpdate ${i}.\n\nThanks,\nSam` }));
   const c = card.build(rows, { channel: 'email' });
   assert.strictEqual(c.bursts, 3);
   assert.strictEqual(c.greeting, 1);

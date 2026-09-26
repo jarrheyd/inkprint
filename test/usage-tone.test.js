@@ -40,7 +40,7 @@ test('student: features are words, pairs and style flags only', () => {
 test('teacher: schema and labels are fixed sets', () => {
   assert.deepStrictEqual(teacher.SCHEMA.properties.labels.items.required, ['i', 'mood', 'valence', 'register', 'target']);
   assert.ok(teacher.MOODS.includes('frustrated') && teacher.MOODS.includes('neutral'));
-  assert.ok(!/Jarrhey/.test(teacher.SYSTEM));
+  assert.ok(!/\b[A-Z][a-z]+ De la /.test(teacher.SYSTEM), 'the labeling prompt names no one');
 });
 
 test('tone: held-out split is stable per id', () => {
