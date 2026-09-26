@@ -5,155 +5,171 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How you work with AI</title>
 <!--
-THESIS: your own usage read back as an engineer's computation pad; findings are margin conclusions beside the plot they come from. Refuses the KPI-card dashboard.
-OWN-WORLD: pale green engineering grid (16px minor, 80px major), dark green-black ink, one red margin rule, graphite blue for the machine series. Square, flat, no cards.
-STORY: you open it weekly, read where you differ by project, person and hour, then check when and how you worked and what it cost.
-FIRST VIEWPORT: title block filled in like a pad header across the top; below it the first sheet, "Where you differ", conclusions in the margin, gauges on the grid.
-FORM: computation pad, grounded list position 3, staging: sheets separated by perforations. Seed 064552a4.
+THESIS: your AI use read back one sentence at a time. Each panel says one thing in plain words, the numbers in ink and the rest in gray, with the detail folded under More.
+OWN-WORLD: near-white ground, soft gray rounded panels, no borders or shadows, one warm red kept for tension and push back. System font.
+STORY: you open it weekly, read this week against your usual, where you differ by project and person, then when, what, how you sound and write, and what it cost.
+FIRST VIEWPORT: the page name and live status, then the week sentence: messages this week against a usual week, with an arrow when it moved.
 -->
 <style>
   :root {
-    --pad: #E6EFD8; --grid-minor: #CFE0B8; --grid-major: #B3CB93;
-    --ink: #1B2617; --ink-soft: #46573B; --ink-faint: #7B8B70;
-    --red: #B7362F; --blue: #2D5886; --pos: #276346;
-    --r1: rgba(27, 38, 23, .14); --r2: rgba(27, 38, 23, .34); --r3: rgba(27, 38, 23, .58); --r4: rgba(27, 38, 23, .86);
-    --grid-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M16 0V80M32 0V80M48 0V80M64 0V80M0 16H80M0 32H80M0 48H80M0 64H80' stroke='%23CFE0B8' stroke-width='1'/%3E%3Cpath d='M0 0.5H80M0.5 0V80' stroke='%23B3CB93' stroke-width='1'/%3E%3C/svg%3E");
+    --ground: #FAFAF9; --panel: #EFEFEE; --pill: rgba(17, 17, 16, .06); --pill-hover: rgba(17, 17, 16, .11);
+    --ink: #111110; --ink-soft: #62625E; --ink-faint: #85857F; --line: rgba(17, 17, 16, .1);
+    --red: #C4462F;
+    --r1: rgba(17, 17, 16, .09); --r2: rgba(17, 17, 16, .22); --r3: rgba(17, 17, 16, .45); --r4: rgba(17, 17, 16, .8);
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --pad: #0E1810; --grid-minor: #18271B; --grid-major: #223826;
-      --ink: #DBE7CD; --ink-soft: #9FB291; --ink-faint: #6F8363;
-      --red: #E2675E; --blue: #86AEDB; --pos: #7FC79F;
-      --r1: rgba(219, 231, 205, .12); --r2: rgba(219, 231, 205, .3); --r3: rgba(219, 231, 205, .55); --r4: rgba(219, 231, 205, .85);
-      --grid-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M16 0V80M32 0V80M48 0V80M64 0V80M0 16H80M0 32H80M0 48H80M0 64H80' stroke='%2318271B' stroke-width='1'/%3E%3Cpath d='M0 0.5H80M0.5 0V80' stroke='%23223826' stroke-width='1'/%3E%3C/svg%3E");
+      --ground: #111110; --panel: #1C1C1B; --pill: rgba(242, 242, 240, .07); --pill-hover: rgba(242, 242, 240, .13);
+      --ink: #F2F2F0; --ink-soft: #9C9C97; --ink-faint: #77776F; --line: rgba(242, 242, 240, .1);
+      --red: #E0735F;
+      --r1: rgba(242, 242, 240, .08); --r2: rgba(242, 242, 240, .2); --r3: rgba(242, 242, 240, .42); --r4: rgba(242, 242, 240, .8);
       color-scheme: dark;
     }
   }
+  :root[data-theme="dark"] {
+    --ground: #111110; --panel: #1C1C1B; --pill: rgba(242, 242, 240, .07); --pill-hover: rgba(242, 242, 240, .13);
+    --ink: #F2F2F0; --ink-soft: #9C9C97; --ink-faint: #77776F; --line: rgba(242, 242, 240, .1);
+    --red: #E0735F;
+    --r1: rgba(242, 242, 240, .08); --r2: rgba(242, 242, 240, .2); --r3: rgba(242, 242, 240, .42); --r4: rgba(242, 242, 240, .8);
+    color-scheme: dark;
+  }
   * { box-sizing: border-box; }
-  html { background: var(--pad); }
+  html { background: var(--ground); }
   body {
-    margin: 0; color: var(--ink); background-color: var(--pad);
-    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    margin: 0; color: var(--ink); background: var(--ground);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
   }
-  /* The grid is drawn on the sheet itself, so content sits on its lines. */
-  .pad { max-width: 1120px; margin: 0 auto; padding: 32px 16px 96px; position: relative; background-image: var(--grid-svg); background-position: 16px 32px; }
-  .fig { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
   a { color: inherit; }
+  .page { max-width: 760px; margin: 0 auto; padding: 40px 16px 96px; display: flex; flex-direction: column; gap: 16px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-  /* Title block: the printed header of the pad, filled in. */
-  .title-block { display: grid; grid-template-columns: 2fr repeat(4, 1fr); border: 1.5px solid var(--ink); background: var(--pad); }
-  .title-block > div { padding: 8px 16px; border-left: 1px solid var(--ink); min-width: 0; }
-  .title-block > div:first-child { border-left: 0; }
-  .tb-label { font-size: 11px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+  .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 8px 8px; }
+  .top h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .status { font-size: 14px; color: var(--ink-soft); margin-right: auto; }
+  .status .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); margin-right: 6px; vertical-align: 1px; }
+
+  .panel { background: var(--panel); border-radius: 28px; padding: 40px; min-width: 0; }
+  .p-head { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; }
+  .p-head h2 { font-size: 17px; font-weight: 500; color: var(--ink-soft); margin: 0; line-height: 1.3; }
+  .p-head .pill { margin-left: auto; }
+  .p-note { font-size: 15px; line-height: 1.55; color: var(--ink-soft); max-width: 62ch; margin: 0 0 20px; }
+  .p-note[hidden] { display: none; }
+  .p-note b { color: var(--ink); font-weight: 600; }
+  .big { font-size: 44px; line-height: 1.08; letter-spacing: -0.02em; font-weight: 600; color: var(--ink-soft); margin: 0; text-wrap: pretty; }
+  .big b { color: var(--ink); font-weight: 600; }
+  .sub { font-size: 17px; line-height: 1.45; color: var(--ink-soft); margin: 16px 0 0; max-width: 60ch; }
+  .sub b { color: var(--ink); font-weight: 600; }
+  .arr { color: var(--ink-faint); font-weight: 500; margin-left: .06em; }
+  .arr.bad { color: var(--red); }
+  .glance { margin-top: 32px; }
+
   .info {
-    font: 600 10px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-soft); background: transparent;
-    width: 16px; height: 16px; border: 1px solid var(--ink-soft); border-radius: 50%; padding: 0; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; position: relative;
+    font: 600 11px/1 -apple-system, BlinkMacSystemFont, sans-serif; color: var(--ink-soft); background: transparent;
+    width: 18px; height: 18px; border: 1px solid var(--ink-faint); border-radius: 50%; padding: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; position: relative; flex: none;
   }
-  .info::after { content: ""; position: absolute; inset: -12px; } /* a bigger target than the mark itself */
-  .info:hover, .info[aria-expanded="true"] { color: var(--pad); background: var(--ink); border-color: var(--ink); }
-  .info:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-  .tb-note { border: 1.5px solid var(--ink); border-top: 0; padding: 12px 16px; font-size: 15px; line-height: 1.5; max-width: none; }
-  .tb-note[hidden] { display: none; }
-  .tb-note b { font-weight: 650; }
-  .sheet h2 .info { vertical-align: 4px; margin-left: 8px; }
-  .sheet-note { grid-column: 1 / -1; margin: -4px 0 20px; padding: 12px 16px; border: 1.5px solid var(--ink); font-size: 15px; line-height: 1.5; max-width: 75ch; }
-  .sheet-note[hidden] { display: none; }
-  .tb-value { font-size: 20px; font-weight: 600; line-height: 1.25; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tb-sub { font-size: 12px; color: var(--ink-soft); }
-  .title-block h1 { font-size: 22px; margin: 0; line-height: 1.25; letter-spacing: -0.01em; font-weight: 650; }
-  .controls { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 16px 0 0; flex-wrap: wrap; }
-  .status { font-size: 12px; color: var(--ink-soft); }
-  .status .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--red); margin-right: 6px; vertical-align: 1px; }
-  .toggle {
-    font: inherit; font-size: 13px; color: var(--ink); background: var(--pad); border: 1px solid var(--ink);
-    border-radius: 3px; padding: 4px 10px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+  .info::after { content: ""; position: absolute; inset: -13px; }
+  .info:hover, .info[aria-expanded="true"] { color: var(--panel); background: var(--ink); border-color: var(--ink); }
+  .pill {
+    font: inherit; font-size: 14px; color: var(--ink); background: var(--pill); border: 0; border-radius: 999px;
+    padding: 8px 14px; min-height: 36px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;
+    transition: background-color 160ms cubic-bezier(.2, .8, .2, 1);
   }
-  .toggle:hover { background: var(--r1); }
-  .toggle:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-  button.toggle[aria-pressed="true"] { background: var(--ink); color: var(--pad); }
+  .pill:hover { background: var(--pill-hover); }
+  .pill[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+  .pill[disabled] { opacity: .5; cursor: default; }
+  .more { margin-top: 28px; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .detail { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .detail[hidden] { display: none; }
+  .panel .detail > * + * { margin-top: 32px; }
+  .panel .detail > .d-note + .d-note { margin-top: 12px; }
 
-  /* Sheets, separated by a perforation. */
-  .sheet { display: grid; grid-template-columns: minmax(220px, 30%) 1fr; column-gap: 32px; padding-top: 64px; position: relative; }
-  /* Perforation: a row of punched holes where the sheet tears off. */
-  .sheet + .sheet::before {
-    content: ""; position: absolute; top: 24px; left: -16px; right: -16px; height: 8px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Ccircle cx='8' cy='4' r='2.5' fill='%237B8B70'/%3E%3C/svg%3E");
-    background-repeat: repeat-x; opacity: .7;
-  }
-  .sheet h2 { grid-column: 1 / -1; font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 16px; line-height: 1.2; }
-  .margin { position: relative; padding-right: 20px; }
-  .margin::after { content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: 2px; background: var(--red); opacity: .85; }
-  .plot { min-width: 0; }
-  .note { margin: 0 0 16px; font-size: 16px; line-height: 1.5; }
-  .note.week { font-weight: 500; }
-  .note .n { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
-  .note b { font-weight: 650; }
-  .quiet { color: var(--ink-soft); }
-  .empty { color: var(--ink-soft); font-size: 15px; max-width: 60ch; }
-  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; background: var(--r1); padding: 1px 4px; }
+  /* Glance pieces: short rows, small columns, phrases. */
+  .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .rows li { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 4.5rem; gap: 16px; align-items: center; font-size: 15px; }
+  .rows .rl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rows .rb { height: 6px; border-radius: 3px; background: var(--r1); overflow: hidden; }
+  .rows .rb i { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
+  .rows .rv { text-align: right; color: var(--ink); }
+  .cols { display: flex; align-items: flex-end; gap: 4px; height: 64px; }
+  .cols > i, .cols > span { flex: 1; min-width: 0; }
+  .cols > i { background: var(--r3); border-radius: 3px; min-height: 2px; }
+  .cols > i.hi { background: var(--ink); }
+  .cols > i.red { background: var(--red); }
+  .cols > span { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 2px; }
+  .cols > span i { display: block; border-radius: 3px; }
+  .axis { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-soft); margin-top: 8px; }
+  .axis.even span { flex: 1; text-align: center; }
+  .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .lines li { font-size: 17px; line-height: 1.45; color: var(--ink-soft); }
+  .lines b { color: var(--ink); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips span { background: var(--pill); border-radius: 999px; padding: 6px 12px; font-size: 15px; }
+  .chips b { color: var(--ink); font-weight: 600; margin-left: 6px; }
 
-  /* Findings list with gauges. */
+  /* Detail under More: flat tables and charts. */
+  .d-note { font-size: 15px; color: var(--ink-soft); margin: 0; max-width: 62ch; }
+  .d-note b { color: var(--ink); font-weight: 600; }
+  .d-label { font-size: 14px; color: var(--ink-soft); margin: 0 0 8px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 24px 16px; margin: 0; }
+  .stats dt { font-size: 14px; color: var(--ink-soft); }
+  .stats dd { margin: 2px 0 0; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+  .scroll { overflow-x: auto; }
+  table.ruled { width: 100%; border-collapse: collapse; font-size: 15px; }
+  table.ruled th { text-align: left; font-weight: 500; font-size: 13px; color: var(--ink-soft); padding: 0 12px 8px 0; }
+  table.ruled td { padding: 8px 12px 8px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+  table.ruled .num { text-align: right; white-space: nowrap; }
+  table.ruled td:first-child { white-space: nowrap; max-width: 14rem; overflow: hidden; text-overflow: ellipsis; }
+  table.ruled td.wrap { white-space: normal; max-width: none; }
+  table.ruled tr.day td { color: var(--ink-soft); }
+  .bar { height: 6px; border-radius: 3px; background: var(--ink); display: block; min-width: 2px; }
+  .bar.os, tr.day .bar { background: var(--r3); }
+  .fig { font-size: 12px; }
+  svg text { fill: var(--ink-soft); }
   .finds { list-style: none; margin: 0; padding: 0; }
-  .finds li { display: grid; grid-template-columns: 1fr 180px; gap: 16px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--grid-major); }
-  .finds li:first-child { border-top: 1px solid var(--grid-major); }
-  .finds .t { font-size: 15px; }
+  .finds li { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
   .finds svg { width: 180px; height: 24px; display: block; }
   .gauges { display: flex; flex-direction: column; }
-  .group-label { font-size: 13px; color: var(--ink-soft); margin: 16px 0 8px; font-weight: 600; }
-  .group-label:first-child { margin-top: 0; }
-
-  /* Tables drawn as ruled pad lines. */
-  .scroll { overflow-x: auto; }
-  table.ruled { width: 100%; border-collapse: collapse; }
-  table.ruled th { text-align: left; font-weight: 600; font-size: 12px; color: var(--ink-soft); padding: 4px 8px 6px 0; border-bottom: 1.5px solid var(--ink); }
-  table.ruled td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--grid-major); vertical-align: middle; }
-  table.ruled td.num, table.ruled th.num { text-align: right; }
-  table.ruled tr.day td { color: var(--ink-soft); border-top: 1.5px solid var(--ink); }
-  table.ruled tr.day .bar { background: var(--ink-faint); }
-  .bar { height: 10px; background: var(--ink); display: block; min-width: 1px; }
-  .bar.os { background: var(--blue); }
-  svg text { fill: var(--ink-soft); }
-  .mask { filter: blur(5px); user-select: none; transition: filter 180ms cubic-bezier(.2, .8, .2, 1); }
-  body.names .mask { filter: none; user-select: auto; }
   .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
-  .ctl { display: flex; gap: 8px; }
-  button.toggle[disabled] { opacity: .55; cursor: default; }
-  dialog.share { border: 1.5px solid var(--ink); background: var(--pad); color: var(--ink); padding: 16px; max-width: min(560px, 94vw); }
-  dialog.share::backdrop { background: rgba(14, 24, 16, .55); }
-  dialog.share img { width: 100%; height: auto; display: block; border: 1px solid var(--grid-major); }
-  dialog.share .row { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; }
-  dialog.share label { font-size: 13px; }
-  dialog.share h2 { font-size: 20px; margin: 0 0 12px; font-weight: 650; }
-  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); margin: 8px 0 0; }
-  .sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
-  .sw.hatch { background: repeating-linear-gradient(45deg, var(--red) 0 2px, transparent 2px 4px); outline: 1px solid var(--red); }
-  .fresh { animation: ink 1.2s cubic-bezier(.16, 1, .3, 1); }
-  @keyframes ink { from { color: var(--red); } to { color: inherit; } }
-  @media (prefers-reduced-motion: reduce) { .fresh { animation: none; } .mask { transition: none; } }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink-soft); margin: 8px 0 0; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; background: var(--pill); padding: 1px 5px; border-radius: 5px; }
+  .empty { color: var(--ink-soft); font-size: 17px; max-width: 60ch; }
+
+  .mask { filter: blur(6px); user-select: none; transition: filter 180ms cubic-bezier(.2, .8, .2, 1); }
+  body.names .mask { filter: none; user-select: auto; }
+
+  dialog.share { border: 0; border-radius: 28px; background: var(--panel); color: var(--ink); padding: 24px; max-width: min(520px, 94vw); }
+  dialog.share::backdrop { background: rgba(17, 17, 16, .5); }
+  dialog.share img { width: 100%; height: auto; display: block; border-radius: 16px; }
+  dialog.share .row { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+  dialog.share label { font-size: 14px; }
+  dialog.share h2 { font-size: 17px; margin: 0 0 16px; font-weight: 600; }
+  .ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .enter .panel { animation: rise 520ms cubic-bezier(.16, 1, .3, 1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .fresh { animation: fresh 700ms cubic-bezier(.16, 1, .3, 1); }
+  @keyframes fresh { from { opacity: .25; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .enter .panel, .fresh { animation: none; } .mask, .pill { transition: none; } }
 
   @media (max-width: 760px) {
-    .title-block { grid-template-columns: 1fr 1fr; }
-    .title-block > div:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--ink); }
-    .title-block > div:nth-child(2), .title-block > div:nth-child(4) { border-left: 0; }
-    .pad { background-position: 16px 32px; }
-    .title-block > div:nth-child(2), .title-block > div:nth-child(3) { border-bottom: 1px solid var(--ink); }
-    .sheet { grid-template-columns: 1fr; }
-    .margin { padding: 12px 0 0; margin-bottom: 16px; }
-    .margin::after { top: 0; left: 0; right: auto; width: 40px; height: 2px; bottom: auto; }
+    .page { padding: 24px 16px 64px; gap: 12px; }
+    .panel { padding: 24px; border-radius: 24px; }
+    .big { font-size: 30px; line-height: 1.12; }
+    .rows li { grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr) 4.5rem; gap: 12px; }
     .finds li { grid-template-columns: 1fr; gap: 4px; }
     .two { grid-template-columns: minmax(0, 1fr); }
-    .hide-sm { display: none; }
-    .gauges { display: none; } /* the sentence already carries both numbers */
-    .sheet + .sheet::before { left: 0; right: 0; }
-    .toggle { min-height: 44px; padding: 8px 14px; }
+    .hide-sm, .gauges { display: none; }
+    .pill { min-height: 44px; }
   }
 </style>
 </head>
 <body>
-<main class="pad" id="pad">
+<main class="page" id="page">
   <p class="empty">Reading your transcripts...</p>
 </main>
 <script>
@@ -165,7 +181,28 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   const money = (x) => '$' + Math.round(x || 0).toLocaleString();
   const hrs = (m) => (m / 60 >= 10 ? Math.round(m / 60) : (m / 60).toFixed(1)) + 'h';
   const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const DAY = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const fmtH = (h) => (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
+  const narrow = () => window.matchMedia('(max-width: 760px)').matches;
+  const shortDate = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
   let last = null;
+  let firstPaint = true;
+
+  // Numbers in a sentence go in ink, the words around them stay gray.
+  const NUM = /(\$?\d(?:[\d,]*\d)?(?:\.\d+)?(?:%|x|h)?)/;
+  function ink(text) { return String(text).split(NUM).map((p, i) => (i % 2 ? `<b>${esc(p)}</b>` : esc(p))).join(''); }
+  function masked(name, isPerson) { return isPerson ? `<span class="mask">${esc(name)}</span>` : esc(name); }
+  function inkName(text, name, isPerson) {
+    const re = new RegExp('\\b' + String(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+    return String(text).split(re).map(ink).join(isPerson ? masked(name, true) : `<b>${esc(name)}</b>`);
+  }
+
+  // An arrow only when a number moved more than 10% against your usual. Red only when it means more tension.
+  function arrow(now, base, badWhenUp, fmt) {
+    if (!base || Math.abs(now / base - 1) <= 0.1) return '';
+    const up = now > base;
+    return `<span class="arr${badWhenUp && up ? ' bad' : ''}" aria-hidden="true">${up ? '↑' : '↓'}</span><span class="sr">, ${up ? 'up' : 'down'}</span>`;
+  }
 
   function ramp(v, max) {
     if (!v) return 'transparent';
@@ -175,9 +212,17 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     return hit ? hit[1] : 'var(--r1)';
   }
 
-  function masked(name, isPerson) { return isPerson ? `<span class="mask">${esc(name)}</span>` : esc(name); }
+  function rows(list) {
+    const max = Math.max(...list.map((r) => r.v), 1);
+    return `<ul class="rows">${list.map((r) => `<li><span class="rl">${r.label}</span><span class="rb" aria-hidden="true"><i style="width:${Math.max(2, (r.v / max) * 100)}%"></i></span><span class="rv">${r.text}</span></li>`).join('')}</ul>`;
+  }
+  function cols(values, label, cls) {
+    const max = Math.max(...values) || 1;
+    return `<div class="cols" role="img" aria-label="${esc(label)}">${values.map((v, i) => `<i class="${cls ? cls(v, i) : ''}" style="height:${(v / max) * 100}%"></i>`).join('')}</div>`;
+  }
 
   const METRIC_NAME = { medianWords: 'words per message', correction: 'push back', question: 'questions', laugh: 'laughs', late: 'late-night messages', shout: 'all-caps messages', neg: 'tense messages', pos: 'upbeat messages' };
+  function fmtMetric(k, v) { return k === 'medianWords' ? Math.round(v) + ' words' : pct(v); }
   // Filled dot = higher than usual, hollow = lower. Red only when it means more tension.
   function gauge(v, b, metric) {
     const max = Math.max(v, b) * 1.15 || 1;
@@ -185,98 +230,97 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     const col = metric === 'neg' && v > b ? 'var(--red)' : 'var(--ink)';
     const name = METRIC_NAME[metric] || String(metric).replace(/^lang:/, '');
     return `<svg viewBox="0 0 180 28" role="img" aria-label="${esc(name)}: ${esc(fmtMetric(metric, v))} here, ${esc(fmtMetric(metric, b))} usually">
-      <line x1="8" y1="14" x2="172" y2="14" stroke="var(--ink-faint)" stroke-width="1"/>
+      <line x1="8" y1="14" x2="172" y2="14" stroke="var(--r2)" stroke-width="1"/>
       <line x1="${x(b)}" y1="6" x2="${x(b)}" y2="22" stroke="var(--ink-soft)" stroke-width="1.5"/>
       <line x1="${x(Math.min(v, b))}" y1="14" x2="${x(Math.max(v, b))}" y2="14" stroke="${col}" stroke-width="2"/>
-      <circle cx="${x(v)}" cy="14" r="4.5" fill="${v > b ? col : 'var(--pad)'}" stroke="${col}" stroke-width="2"/>
+      <circle cx="${x(v)}" cy="14" r="4.5" fill="${v > b ? col : 'var(--panel)'}" stroke="${col}" stroke-width="2"/>
     </svg>`;
   }
-  function fmtMetric(k, v) { return k === 'medianWords' ? Math.round(v) + ' words' : pct(v); }
-  const narrow = () => window.innerWidth < 760;
-  const shortDate = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-  // What each number in the title block counts, in plain words, built from the same data.
-  let openInfo = null;
-  function info(key) { return `<button class="info" type="button" data-info="${key}" aria-expanded="${openInfo === key}" aria-controls="tb-note" aria-label="Where this number comes from">i</button>`; }
-  function infoText(key, m) {
-    const y = m.you, w = m.thisWeek || { base: {} };
-    const tools = [y.byTool.claude ? `${num(y.byTool.claude)} in Claude Code` : '', y.byTool.codex ? `${num(y.byTool.codex)} in Codex` : ''].filter(Boolean).join(' and ');
-    return {
-      range: `From the oldest AI transcript on this machine to today, in your timezone (${esc(m.tz)}). Claude Code deletes transcripts after 30 days by default; inkprint keeps everything it already read, so the range keeps growing from here.`,
-      week: `Messages you typed Monday to today. <b>Usual</b> is your average over the ${w.weeksCompared || 'last few'} full weeks before this one.`,
-      messages: `Every prompt you typed yourself: ${tools || 'none yet'}, read from the transcripts on this machine. <b>Left out:</b> ${num(m.machine.osPrompts)} messages your automation wrote (scheduled runs, subagents, prompts that open with your OS's own preamble), tool results, command output, and interrupted or empty turns. The word count includes anything you pasted into those messages; the word and phrase lists further down leave pasted code and logs out.`,
-      days: `Days with at least one message you typed. <b>Hours</b> add up time inside your sessions; a gap longer than 30 minutes between two messages counts as a break, not work.`,
-      streak: `Days in a row with at least one message you typed. Today counts once you send one, so an empty morning doesn't break it.`,
-    }[key] || '';
-  }
-  function showInfo(key, m) {
-    const note = $('#tb-note');
-    openInfo = openInfo === key ? null : key;
-    document.querySelectorAll('.info[data-info]').forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.info === openInfo)));
-    note.hidden = !openInfo;
-    note.innerHTML = openInfo ? infoText(openInfo, m) : '';
-  }
-
-  function titleBlock(m) {
-    const y = m.you, w = m.thisWeek || { now: { messages: 0 }, today: 0, start: m.range.to };
-    return `<header class="title-block">
-      <div><span class="tb-label">Subject ${info('range')}</span><h1>How you work with AI</h1><span class="tb-sub">${esc(shortDate(m.range.from))} to ${esc(shortDate(m.range.to))}, ${esc(m.tz)}</span></div>
-      <div><span class="tb-label">Week of ${esc(shortDate(w.start))} ${info('week')}</span><span class="tb-value" data-k="week">${num(w.now.messages)}</span><span class="tb-sub" data-k="today">${num(w.today)} today${w.base && w.base.messages ? `, usual ${Math.round(w.base.messages)}` : ''}</span></div>
-      <div><span class="tb-label">Messages you typed ${info('messages')}</span><span class="tb-value" data-k="prompts">${num(y.prompts)}</span><span class="tb-sub">${num(y.words)} words</span></div>
-      <div><span class="tb-label">Active days ${info('days')}</span><span class="tb-value">${y.activeDays}</span><span class="tb-sub">~${num(y.session.hours)}h in sessions</span></div>
-      <div><span class="tb-label">Streak ${info('streak')}</span><span class="tb-value">${y.streak.current} days</span><span class="tb-sub">longest ${y.streak.longest}</span></div>
-    </header>
-    <p class="tb-note" id="tb-note" role="region" aria-live="polite" hidden></p>
-    <div class="controls">
-      <span class="status" id="status" role="status" aria-live="polite"></span>
-      <span class="ctl">
-        ${window.__SNAPSHOT__ ? '' : '<button class="toggle" id="share" type="button">Share your week</button>'}
-        <button class="toggle" id="names" type="button" aria-pressed="${document.body.classList.contains('names')}">${document.body.classList.contains('names') ? 'Hide names' : 'Show names'}</button>
-      </span>
-    </div>`;
-  }
-
-  // What each section counts and the rules behind it, matching what the code does.
-  const SHEET_INFO = {
-    'This week, and where you differ': `Each line compares your messages on one project, or messages that name one person, with all your messages. A project needs 25 of your messages and a person 12 mentions before it shows up. A difference only makes the list when it's at least 1.6 times higher or lower than your usual and at least 3 points apart, so 1% against 2% never counts. Each line keeps its three strongest. Projects come from the folder a session ran in; sessions from a general folder go to the project their messages name most. People are matched by name and nickname from your people list. The lines at the top compare this week so far with your four full weeks before it.`,
-    'Where you differ': `A project needs 25 of your messages and a person 12 mentions before a comparison shows up here.`,
-    'When you work': `The calendar has one square per day; darker means more messages you typed. The grid below is the same messages by weekday and hour, in your timezone. A session's length runs from your first message to your last, and a gap over 30 minutes counts as a break.`,
-    'What you work on': `Time is the active time inside your sessions (gaps over 30 minutes don't count), split across projects by how many of your messages went to each. Messages are the ones you typed. The small bars are your messages per week for the last 12 weeks. Day to day holds your own OS or admin work, if you've marked it in config, plus general sessions that name no project.`,
-    'How you sound': `Every message you typed is scored on this machine by a small classifier: tense covers frustrated and stressed, upbeat covers pleased and playful, and anything else counts as flat. The general model only calls a message tense or upbeat when it's fairly sure. The weekly columns show each week's split, and a project needs 25 of your messages to get a row. Tuning replaces the general model with one trained on your own messages.`,
-    'How you write': `Cards are built from messages you sent: the ones your AI read for you in Gmail, Discord, Telegram, WhatsApp, Google Chat or Teams, plus a WhatsApp bridge database if you run one. Messages your AI sent in your name are left out. "To your AI" is built from your prompts. A person or group gets its own card at 30 messages. The check stops a draft when it misses your usual range on two or more measures of a card built from 30+ messages, or breaks a rule you've told your AI twice.`,
-    'The words you use': `Typical words is the middle length of your messages, so a few long pastes don't pull it up. Push back counts messages that open with things like "no", "wrong" or "again", or say "you missed" or "I said". Questions are messages with a question mark. The word and phrase lists skip common words, numbers, links, and pasted code or logs. Filler words come from the list in your config.`,
-    'Who comes up': `Mentions are your messages that name someone from your people list, by name or nickname. Names stay hidden until you press Show names. Typical words and tense share use only the messages that name that person. None of this leaves your machine.`,
-    'What it costs': `API-equivalent means your tokens priced at each model's public per-token rates (input, output, and cache reads and writes). A subscription isn't billed these amounts; it shows what the same work would cost through the API. Your sessions are ones you started; your OS covers scheduled runs, subagents and sessions your automation opened. Tools counts every tool call. Models with no known price show n/a until you add a price in config.`,
+  // What each panel counts and the rules behind it, matching what the code does.
+  const INFO = {
+    week: (m) => {
+      const y = m.you, w = m.thisWeek || {};
+      const tools = [y.byTool.claude ? `${num(y.byTool.claude)} in Claude Code` : '', y.byTool.codex ? `${num(y.byTool.codex)} in Codex` : ''].filter(Boolean).join(' and ');
+      return `Messages you typed Monday to today, against your average over the ${w.weeksCompared || 'last few'} full weeks before this one. An arrow shows up when a number moved more than 10%.<br><br>
+        <b>Counted:</b> every prompt you typed yourself, ${tools || 'none yet'}. <b>Left out:</b> ${num(m.machine.osPrompts)} messages your automation wrote (scheduled runs, subagents, prompts that open with your OS's own preamble), tool results, command output, and interrupted or empty turns.<br><br>
+        Hours add up time inside your sessions, and a gap over 30 minutes counts as a break. The streak counts days in a row with a message; today counts once you send one. Claude Code deletes transcripts after 30 days by default, but inkprint keeps what it already read, so the range keeps growing.`;
+    },
+    differ: () => `Each line compares your messages on one project, or messages that name one person, with all your messages. A project needs 25 of your messages and a person 12 mentions. A difference only counts when it's at least 1.6 times higher or lower than usual and at least 3 points apart, so 1% against 2% never shows. Projects come from the folder a session ran in; people are matched by name and nickname from your people list.`,
+    when: () => `Your messages by weekday and hour, in your timezone. The calendar under More has one square per day, darker for more messages, and a session runs from your first message to your last with any gap over 30 minutes counted as a break.`,
+    projects: () => `Time is the active time inside your sessions, split across projects by how many of your messages went to each. Day to day holds your own OS or admin work, if you've marked it in config, plus general sessions that name no project.`,
+    mood: () => `Every message you typed is scored on this machine by a small classifier: tense covers frustrated and stressed, upbeat covers pleased and playful, and anything else counts as flat. The general model only calls a message tense or upbeat when it's fairly sure, and tuning swaps it for one trained on your own messages.`,
+    voice: () => `Built from messages you sent: the ones your AI read for you in Gmail, Discord, Telegram, WhatsApp, Google Chat or Teams, plus a WhatsApp bridge database if you run one. Messages your AI sent in your name are left out. A person or group gets its own card at 30 messages. The check stops a draft that misses your usual range on two or more measures, or breaks a rule you've told your AI twice.`,
+    words: () => `Typical words is the middle length of your messages, so a few long pastes don't pull it up. Push back counts messages that open with things like "no", "wrong" or "again", or say "you missed" or "I said". The phrase lists skip common words, numbers, links, and pasted code or logs.`,
+    people: () => `Mentions are your messages that name someone from your people list, by name or nickname. Names stay hidden until you press Show names, and none of this leaves your machine.`,
+    cost: () => `Your tokens priced at each model's public per-token rates for input, output, and cache reads and writes, which a subscription isn't billed. Your sessions are ones you started; your automation covers scheduled runs, subagents and sessions it opened. Models with no known price show n/a until you add one under <code>usage.prices</code>.`,
   };
-  let openSheet = null;
+  let openNote = null;
+  const openMore = new Set();
 
-  function sheet(title, margin, plot) {
-    const note = SHEET_INFO[title];
-    const id = 'si-' + title.toLowerCase().replace(/[^a-z]+/g, '-');
-    const btn = note ? ` <button class="info" type="button" data-sheet="${esc(title)}" aria-expanded="${openSheet === title}" aria-controls="${id}" aria-label="What this section counts">i</button>` : '';
-    const box = note ? `<p class="sheet-note" id="${id}" ${openSheet === title ? '' : 'hidden'}>${note}</p>` : '';
-    return `<section class="sheet"><h2>${title}${btn}</h2>${box}<div class="margin">${margin}</div><div class="plot">${plot}</div></section>`;
+  function namesBtn(where) {
+    const on = document.body.classList.contains('names');
+    return `<button class="pill names-btn" type="button" data-names="${where}" aria-pressed="${on}">${on ? 'Hide names' : 'Show names'}</button>`;
+  }
+
+  function panel(m, key, title, b) {
+    const note = INFO[key];
+    const open = openMore.has(key), noted = openNote === key;
+    const parts = [`<div class="p-head"><h2 id="h-${key}">${title}</h2>`];
+    if (note) parts.push(`<button class="info" type="button" data-note="${key}" aria-expanded="${noted}" aria-controls="n-${key}" aria-label="What this counts" aria-describedby="h-${key}">i</button>`);
+    parts.push((b.tools || '') + '</div>');
+    if (note) parts.push(`<p class="p-note" id="n-${key}"${noted ? '' : ' hidden'}>${note(m)}</p>`);
+    if (b.big) parts.push(`<p class="big">${b.big}</p>`);
+    parts.push(b.sub || '');
+    if (b.glance) parts.push(`<div class="glance">${b.glance}</div>`);
+    if (b.more) parts.push(`<button class="pill more" type="button" data-more="${key}" aria-expanded="${open}" aria-controls="d-${key}">${open ? 'Less' : 'More'}</button>`, `<div class="detail" id="d-${key}"${open ? '' : ' hidden'}>${b.more}</div>`);
+    return `<section class="panel" aria-labelledby="h-${key}">${parts.join('')}</section>`;
+  }
+
+  function week(m) {
+    const y = m.you, w = m.thisWeek;
+    if (!w) return panel(m, 'week', 'Your messages', { big: `<span data-k="week"><b>${num(y.prompts)}</b></span> messages over <b>${y.activeDays}</b> days.` });
+    const usual = w.base && w.base.messages ? Math.round(w.base.messages) : 0;
+    // The arrow compares your pace so far with a usual full week, so a Tuesday never reads as a drop.
+    const pace = w.daysIn ? (w.now.messages / w.daysIn) * 7 : w.now.messages;
+    const big = `<span data-k="week"><b>${num(w.now.messages)}</b></span>${arrow(pace, usual, false, num)} messages so far this week${usual ? `, against <b>${num(usual)}</b> in a usual week` : ''}.`;
+    const moodShown = m.mood && m.mood.scored;
+    const sub = (w.moved || []).filter((x) => !(moodShown && x.metric === 'neg')).slice(0, 2).map((x) => `<p class="sub">${ink(x.text)}</p>`).join('');
+    const i0 = y.series.findIndex((d) => d.day === w.start);
+    const days = DOW.map((_, i) => { const d = i0 >= 0 ? y.series[i0 + i] : null; return d ? d.prompts : 0; });
+    const today = i0 >= 0 ? y.series.length - 1 - i0 : -1;
+    const glance = cols(days, 'Messages per day this week', (v, i) => (i === today ? 'hi' : '')) + `<div class="axis even">${DOW.map((d) => `<span>${d}</span>`).join('')}</div>`;
+    const more = `<dl class="stats">
+      <div><dt>Messages you typed</dt><dd data-k="prompts">${num(y.prompts)}</dd></div>
+      <div><dt>Words</dt><dd>${num(y.words)}</dd></div>
+      <div><dt>Active days</dt><dd>${y.activeDays}</dd></div>
+      <div><dt>Hours in sessions</dt><dd>${num(y.session.hours)}</dd></div>
+      <div><dt>Streak</dt><dd>${y.streak.current} days</dd></div>
+      <div><dt>Longest streak</dt><dd>${y.streak.longest} days</dd></div>
+    </dl>
+    <p class="d-note">From ${esc(shortDate(m.range.from))} to ${esc(shortDate(m.range.to))}, in ${esc(m.tz)}. A typical session runs <b>${y.session.medianMinutes} minutes</b> and <b>${y.session.medianPrompts} messages</b>.</p>`;
+    return panel(m, 'week', `Week of ${esc(shortDate(w.start))}, ${num(w.today)} today`, { big, sub, glance, more });
   }
 
   function differ(m) {
-    const d = m.contexts.diffs;
-    if (!d.length) return sheet('Where you differ', `<p class="note">Nothing stands out yet. Comparisons start once a project has 25 of your messages or a person comes up 12 times.</p>`, '');
-    const groups = [['project', 'By project'], ['person', 'By person']];
+    const c = m.contexts.combined || [];
+    if (!c.length) return panel(m, 'differ', 'Where you differ', { big: 'Nothing stands out yet.', sub: `<p class="sub">Comparisons start once a project has 25 of your messages or a person comes up 12 times.</p>` });
+    const top = c[0];
+    const person = (x) => x.kind === 'person';
+    const lead = person(top) ? `When ${masked(top.name, true)} comes up, you` : `On <b>${esc(top.name)}</b>, you`;
+    // For people, message length mostly tracks pasted text, so lead with how you talk when there's another difference.
+    const talk = top.items.filter((i) => i.metric !== 'medianWords');
+    const items = person(top) && talk.length ? talk : top.items;
+    const big = `${lead} ${ink(items.slice(0, 2).map((i) => i.phrase).join(' and '))}.`;
+    const glance = `<ul class="lines">${c.slice(1, 5).map((x) => `<li>${inkName(x.text, x.name, person(x))}</li>`).join('')}</ul>`;
     const base = m.words.base;
-    const w = m.thisWeek;
-    const week = w && w.moved.length ? w.moved.slice(0, 3).map((x) => `<p class="note week">${esc(x.text)}</p>`).join('') : '';
-    const margin = `${week}<p class="note">Each line compares one project or person with <b>how you usually write</b>. ${narrow() ? 'Each sentence gives that context first, then your usual.' : 'The tick is your usual; each dot is one difference, in the order the sentence lists them, filled when higher and hollow when lower.'}</p>
-      <p class="note">Usually you write <b>${base.medianWords} words</b>, push back on <b>${pct(base.correction)}</b> and ask a question in <b>${pct(base.question)}</b> of messages.<span class="n">from ${num(base.n)} messages</span></p>`;
-    const combined = m.contexts.combined || [];
-    const list = groups.map(([k, label]) => {
-      const rows = combined.filter((x) => x.kind === k).slice(0, 8);
-      if (!rows.length) return '';
-      return `<p class="group-label">${label}</p><ul class="finds">${rows.map((x) => {
-        const text = esc(x.text).replace(esc(x.name), masked(x.name, k === 'person'));
-        return `<li><span class="t">${text}</span><span class="gauges">${x.items.map((i) => gauge(i.value, i.base, i.metric)).join('')}</span></li>`;
-      }).join('')}</ul>`;
+    const groups = [['project', 'By project'], ['person', 'By person']].map(([k, label]) => {
+      const list = c.filter((x) => x.kind === k).slice(0, 8);
+      if (!list.length) return '';
+      return `<div><p class="d-label">${label}</p><ul class="finds">${list.map((x) => `<li><span>${inkName(x.text, x.name, k === 'person')}</span><span class="gauges">${x.items.map((i) => gauge(i.value, i.base, i.metric)).join('')}</span></li>`).join('')}</ul></div>`;
     }).join('');
-    return sheet('This week, and where you differ', margin, list);
+    const more = `<p class="d-note">Usually you write <b>${base.medianWords} words</b>, push back on <b>${pct(base.correction)}</b> and ask a question in <b>${pct(base.question)}</b> of messages, from ${num(base.n)} messages. ${narrow() ? '' : 'The tick is your usual; each dot is one difference, filled when higher and hollow when lower.'}</p>${groups}`;
+    return panel(m, 'differ', 'Where you differ most', { big, glance, more, tools: c.some(person) ? namesBtn('differ') : '' });
   }
 
   function calendar(m) {
@@ -284,7 +328,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     if (!s.length) return '';
     const first = new Date(s[0].day + 'T00:00:00Z');
     const off = (first.getUTCDay() + 6) % 7;
-    const cols = Math.ceil((s.length + off) / 7);
+    const ncols = Math.ceil((s.length + off) / 7);
     const cell = 14, gap = 3, left = 28, top = 18;
     const max = Math.max(...s.map((d) => d.prompts));
     let out = '';
@@ -293,12 +337,12 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
       const k = i + off, c = Math.floor(k / 7), r = k % 7;
       const x = left + c * (cell + gap), y = top + r * (cell + gap);
       const isToday = i === s.length - 1;
-      out += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${ramp(d.prompts, max)}" stroke="${isToday ? 'var(--red)' : 'var(--grid-major)'}" stroke-width="${isToday ? 1.5 : 1}"><title>${d.day}: ${d.prompts} messages</title></rect>`;
+      out += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="3" fill="${d.prompts ? ramp(d.prompts, max) : 'var(--r1)'}" ${isToday ? 'stroke="var(--ink)" stroke-width="1.5"' : ''}><title>${d.day}: ${d.prompts} messages</title></rect>`;
       const mo = d.day.slice(0, 7);
       if (mo !== month && r === 0) { month = mo; out += `<text x="${x}" y="11" class="fig">${new Date(d.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}</text>`; }
     });
     ['M', '', 'W', '', 'F', '', 'S'].forEach((l, r) => { if (l) out += `<text x="0" y="${top + r * (cell + gap) + 11}" class="fig">${l}</text>`; });
-    const w = left + cols * (cell + gap);
+    const w = left + ncols * (cell + gap);
     return `<svg viewBox="0 0 ${w} ${top + 7 * (cell + gap)}" width="${w}" style="max-width:100%;height:auto" role="img" aria-label="Messages per day">${out}</svg>`;
   }
 
@@ -310,34 +354,31 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     let out = '';
     g.forEach((row, r) => {
       out += `<text x="0" y="${top + r * (cell + 2) + 14}" class="fig">${DOW[r]}</text>`;
-      row.forEach((v, i) => { out += `<rect x="${left + i * (cell + 2)}" y="${top + r * (cell + 2)}" width="${cell}" height="${cell}" fill="${ramp(v, max)}" stroke="var(--grid-major)"><title>${DOW[r]} ${i * step}:00, ${v} messages</title></rect>`; });
+      row.forEach((v, i) => { out += `<rect x="${left + i * (cell + 2)}" y="${top + r * (cell + 2)}" width="${cell}" height="${cell}" rx="3" fill="${v ? ramp(v, max) : 'var(--r1)'}"><title>${DOW[r]} ${i * step}:00, ${v} messages</title></rect>`; });
     });
-    [0, 6, 12, 18].forEach((h) => { out += `<text x="${left + (h / step) * (cell + 2)}" y="${top + 7 * (cell + 2) + 14}" class="fig">${h === 0 ? '12am' : h === 12 ? '12pm' : h < 12 ? h + 'am' : (h - 12) + 'pm'}</text>`; });
+    [0, 6, 12, 18].forEach((h) => { out += `<text x="${left + (h / step) * (cell + 2)}" y="${top + 7 * (cell + 2) + 14}" class="fig">${fmtH(h)}</text>`; });
     const w = left + g[0].length * (cell + 2);
     return `<svg viewBox="0 0 ${w} ${top + 7 * (cell + 2) + 20}" width="${w}" style="max-width:100%;height:auto" role="img" aria-label="Messages by hour and weekday">${out}</svg>`;
   }
 
   function when(m) {
-    const y = m.you;
-    const g = y.hourDow;
+    const y = m.you, g = y.hourDow;
     const byDow = g.map((r) => r.reduce((a, b) => a + b, 0));
     const byHour = g[0].map((_, h) => g.reduce((a, r) => a + r[h], 0));
     const busyDow = byDow.indexOf(Math.max(...byDow));
     const busyHour = byHour.indexOf(Math.max(...byHour));
     const weekend = (byDow[5] + byDow[6]) / (byDow.reduce((a, b) => a + b, 0) || 1);
-    const fmtH = (h) => (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
-    const margin = `
-      <p class="note">Your busiest day is <b>${DOW[busyDow]}</b> and your busiest hour starts at <b>${fmtH(busyHour)}</b>.</p>
-      <p class="note"><b>${pct(m.words.base.late)}</b> of your messages go out between 10pm and 5am. <b>${pct(weekend)}</b> land on a weekend.</p>
-      <p class="note">A typical session runs <b>${y.session.medianMinutes} minutes</b> and <b>${y.session.medianPrompts} messages</b>.<span class="n">gaps over 30 minutes don't count as time</span></p>`;
-    return sheet('When you work', margin, `${calendar(m)}<div style="height:24px"></div>${hourGrid(m)}`);
+    const big = `You're busiest on <b>${DAY[busyDow]}s</b>, in the hour from <b>${fmtH(busyHour)}</b>.`;
+    const sub = `<p class="sub"><b>${pct(m.words.base.late)}</b> of your messages go out late at night, between 10pm and 5am.</p>`;
+    const glance = cols(byHour, 'Messages by hour of day', (v, i) => (i === busyHour ? 'hi' : '')) + `<div class="axis"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>`;
+    const more = `<p class="d-note"><b>${pct(weekend)}</b> of your messages land on a weekend.</p><div>${calendar(m)}</div><div>${hourGrid(m)}</div>`;
+    return panel(m, 'when', 'When you work', { big, sub, glance, more });
   }
 
-  function weekCols(values, color) {
+  function weekCols(values) {
     const max = Math.max(...values, 1), w = 6, gap = 2, h = 22;
     return `<svg viewBox="0 0 ${values.length * (w + gap)} ${h}" width="${values.length * (w + gap)}" height="${h}" aria-hidden="true">
-      <line x1="0" y1="${h - 0.5}" x2="${values.length * (w + gap)}" y2="${h - 0.5}" stroke="var(--ink-faint)"/>
-      ${values.map((v, i) => `<rect x="${i * (w + gap)}" y="${h - (v / max) * (h - 2)}" width="${w}" height="${(v / max) * (h - 2)}" fill="${color}"/>`).join('')}</svg>`;
+      ${values.map((v, i) => `<rect x="${i * (w + gap)}" y="${h - Math.max(1, (v / max) * h)}" width="${w}" height="${Math.max(1, (v / max) * h)}" rx="1.5" fill="${v ? 'var(--ink)' : 'var(--r2)'}"/>`).join('')}</svg>`;
   }
 
   function projects(m) {
@@ -347,150 +388,151 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     if (!p.length) return '';
     const total = m.projects.reduce((a, x) => a + x.minutes, 0) || 1;
     const projTotal = real.reduce((a, x) => a + x.minutes, 0) || 1;
-    const max = Math.max(...p.map((x) => x.minutes), 1);
     const top = real[0] || p[0];
     const top3 = real.slice(0, 3).reduce((a, x) => a + x.minutes, 0) / projTotal;
-    const margin = `
-      <p class="note"><b>${esc(top.name)}</b> took <b>${pct(top.minutes / projTotal)}</b> of your project time, about ${hrs(top.minutes)}.</p>
-      <p class="note">Your top three projects cover <b>${pct(top3)}</b> of it.</p>
-      ${day ? `<p class="note">Running your day took another <b>${hrs(day.minutes)}</b>, ${pct(day.minutes / total)} of all your hours.</p>` : ''}`;
-    const rows = p.map((x) => `<tr${x.day ? ' class="day"' : ''}>
-      <td>${esc(x.name)}</td>
-      <td style="width:38%"><span class="bar" style="width:${(x.minutes / max) * 100}%"></span></td>
-      <td class="num fig">${hrs(x.minutes)}</td><td class="num fig">${num(x.prompts)}</td>
-      <td class="num hide-sm">${weekCols(x.weekly.slice(-12), 'var(--ink)')}</td></tr>`).join('');
-    return sheet('What you work on', margin, `<div class="scroll"><table class="ruled"><thead><tr><th>Project</th><th>Time</th><th class="num">Hours</th><th class="num">Messages</th><th class="num hide-sm">Last 12 weeks</th></tr></thead><tbody>${rows}</tbody></table></div>`);
-  }
-
-  function mood(m) {
-    const t = m.tone;
-    if (!m.mood || !m.mood.scored) {
-      return sheet('How you sound', `<p class="note">Tone isn't set up yet.</p>`, `<p class="empty">The mood model that ships with inkprint is missing from this install. Run <code>npx github:jarrheyd/inkprint</code> again to put it back.</p>`);
-    }
-    const wk = m.mood.weeks.filter((w) => w.neg + w.flat + w.pos > 0).slice(narrow() ? -8 : -16);
-    const colW = 28, gap = 8, h = 120;
-    let bars = '';
-    wk.forEach((w, i) => {
-      const n = w.neg + w.flat + w.pos, x = i * (colW + gap);
-      const hn = (w.neg / n) * h, hp = (w.pos / n) * h, hf = h - hn - hp;
-      bars += `<g><title>${w.week}: ${pct(w.neg / n)} tense, ${pct(w.pos / n)} upbeat, ${n} messages</title>
-        <rect x="${x}" y="0" width="${colW}" height="${hp}" fill="var(--pos)"/>
-        <rect x="${x}" y="${hp}" width="${colW}" height="${hf}" fill="var(--r1)" stroke="var(--grid-major)"/>
-        <rect x="${x}" y="${hp + hf}" width="${colW}" height="${hn}" fill="url(#hatch)" stroke="var(--red)"/>
-        <text x="${x}" y="${h + 14}" class="fig">${Number(w.start.slice(8))}</text>${i === 0 || w.start.slice(5, 7) !== wk[i - 1].start.slice(5, 7) ? `<text x="${x}" y="${h + 27}" class="fig">${esc(shortDate(w.start).split(' ')[0])}</text>` : ''}</g>`;
-    });
-    const defs = `<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="4" fill="var(--red)"/></pattern></defs>`;
-    const b = m.words.base;
-    const moods = Object.entries(b.moods || {}).sort((a, c) => c[1] - a[1]);
-    const tenseProj = Object.entries(m.projectProfiles).filter(([, p]) => p.n >= 25 && p.neg != null).sort((a, c) => c[1].neg - a[1].neg);
-    const agree = t && t.heldOut ? t.heldOut.polarity.agree : null;
-    const margin = `
-      <p class="note">Most of the time you sound <b>${esc(moods[0] ? moods[0][0] : 'flat')}</b>. <b>${pct(b.neg)}</b> of your messages read tense and <b>${pct(b.pos)}</b> upbeat.<span class="n">${num(m.mood.scored)} messages scored</span></p>
-      ${tenseProj[0] ? `<p class="note">You sound most tense on <b>${esc(tenseProj[0][0])}</b> (${pct(tenseProj[0][1].neg)}) and least on <b>${esc(tenseProj[tenseProj.length - 1][0])}</b> (${pct(tenseProj[tenseProj.length - 1][1].neg)}).</p>` : ''}
-      ${m.toneModel === 'yours'
-        ? `<p class="note quiet">Tone comes from a local classifier trained on ${t ? num(t.labels) : 'a sample of'} of your messages${agree != null ? `; it matches the labeling model on tense / flat / upbeat ${pct(agree)} of the time` : ''}. Read it as a trend, not a verdict on any single message.</p>`
-        : `<p class="note quiet">For now the mood read uses a general model, trained on made-up work messages and run on this machine, so it knows work chat in general rather than how you in particular sound.</p>
-           ${window.__SNAPSHOT__ ? '' : `<p class="note quiet">Tuning it to you sends a sample of 800 of your messages through your <code>claude</code> or <code>codex</code> CLI to be labeled (about 120k tokens once, on your own plan), then trains here. After that, scoring stays on this machine.</p>
-           <p><button class="toggle" id="tune" type="button" ${tuneState === 'running' || tuneState === 'done' ? 'disabled' : ''}>Tune it to me</button> <span class="status" id="tune-status" role="status">${TUNE_TEXT[tuneState] || ''}</span></p>`}`}`;
-    const mix = moods.map(([k, v]) => `<tr><td>${esc(k)}</td><td style="width:60%"><span class="bar" style="width:${v * 100}%"></span></td><td class="num fig">${pct(v)}</td></tr>`).join('');
-    const tp = tenseProj.slice(0, 8).map(([k, p]) => `<tr><td>${esc(k)}</td><td class="num fig">${pct(p.neg)}</td><td class="num fig">${pct(p.pos)}</td><td class="num fig">${num(p.n)}</td></tr>`).join('');
-    return sheet('How you sound', margin, `
-      <svg viewBox="0 0 ${wk.length * (colW + gap) + 44} ${h + 30}" width="${wk.length * (colW + gap) + 44}" style="max-width:100%;height:auto" role="img" aria-label="Share of tense and upbeat messages per week">${defs}${bars}
-        ${wk.length ? `<text x="${wk.length * (colW + gap)}" y="10" class="fig">upbeat</text><text x="${wk.length * (colW + gap)}" y="${h - 4}" class="fig">tense</text>` : ''}</svg>
-      <p class="legend"><span><i class="sw" style="background:var(--pos)"></i>upbeat, on top</span><span><i class="sw" style="background:var(--r1);outline:1px solid var(--grid-major)"></i>flat</span><span><i class="sw hatch"></i>tense, hatched at the bottom</span><span>one column per week, starting Monday</span></p>
-      <div class="two" style="margin-top:32px">
-        <table class="ruled"><thead><tr><th>Mood mix</th><th></th><th class="num">Share</th></tr></thead><tbody>${mix}</tbody></table>
-        <div class="scroll"><table class="ruled"><thead><tr><th>Project</th><th class="num">Tense</th><th class="num">Upbeat</th><th class="num">Messages</th></tr></thead><tbody>${tp}</tbody></table></div>
-      </div>`);
-  }
-
-  function words(m) {
-    const w = m.words, b = w.base;
-    const phrases = w.bigrams.slice(0, 16).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num fig">${v}</td></tr>`).join('');
-    const single = w.top.slice(0, 16).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num fig">${v}</td></tr>`).join('');
-    const tp = Object.entries(w.timeProfiles).map(([k, p]) => `<tr><td>${esc(k)}</td><td class="num fig">${num(p.n)}</td><td class="num fig">${p.medianWords}</td><td class="num fig">${pct(p.correction)}</td><td class="num fig">${pct(p.question)}</td>${p.neg != null ? `<td class="num fig">${pct(p.neg)}</td>` : ''}</tr>`).join('');
-    const hasTone = Object.values(w.timeProfiles).some((p) => p.neg != null);
-    const parts = w.particles.length ? `<p class="note">Filler words you use: ${w.particles.slice(0, 8).map(([k, v]) => `<b>${esc(k)}</b> ${v}`).join(', ')}.</p>` : '';
-    const margin = `
-      <p class="note">Your typical message is <b>${b.medianWords} words</b>; the average is ${Math.round(b.avgWords)}, pulled up by pasted text.</p>
-      <p class="note">When you push back, you keep it to about <b>${w.correctionMedianWords} words</b>. That happens in ${pct(b.correction)} of your messages.</p>
-      <p class="note"><b>${pct(b.lower)}</b> of your messages are all lowercase. You laugh in ${pct(b.laugh)} of them.</p>${parts}`;
-    return sheet('The words you use', margin, `
-      <div class="two"><table class="ruled"><thead><tr><th>Phrases</th><th class="num">Times</th></tr></thead><tbody>${phrases}</tbody></table>
-      <table class="ruled"><thead><tr><th>Words</th><th class="num">Times</th></tr></thead><tbody>${single}</tbody></table></div>
-      <div class="scroll" style="margin-top:32px"><table class="ruled"><thead><tr><th>Time of day</th><th class="num">Messages</th><th class="num">Typical words</th><th class="num">Push back</th><th class="num">Questions</th>${hasTone ? '<th class="num">Tense</th>' : ''}</tr></thead><tbody>${tp}</tbody></table></div>`);
-  }
-
-  function people(m) {
-    const p = m.people.filter((x) => x.mentions >= 3).slice(0, 16);
-    if (!p.length) return sheet('Who comes up', `<p class="note">No one from your people file comes up yet.</p>`, `<p class="empty">Names come from <code>People/people.md</code> and <code>usage.aliases</code> in your config.</p>`);
-    const hasTone = p.some((x) => x.profile.neg != null);
-    const rows = p.map((x) => `<tr><td>${masked(x.name, true)}</td><td class="num fig">${x.mentions}</td>
-      <td class="num hide-sm">${weekCols(x.weekly.slice(-12), 'var(--ink)')}</td>
-      ${hasTone ? `<td class="num fig">${x.profile.neg != null ? pct(x.profile.neg) : ''}</td>` : ''}<td class="num fig">${x.profile.medianWords}</td>
-      <td class="hide-sm">${x.projects.map(([k]) => esc(k)).join(', ')}</td></tr>`).join('');
-    const margin = `<p class="note"><b>${masked(p[0].name, true)}</b> comes up most, in ${p[0].mentions} of your messages.</p>
-      <p class="note quiet">Names are hidden until you press Show names, so this page is safe to share on screen. Everything here stays on this machine.</p>`;
-    return sheet('Who comes up', margin, `<div class="scroll"><table class="ruled"><thead><tr><th>Person</th><th class="num">Mentions</th><th class="num hide-sm">Last 12 weeks</th>${hasTone ? '<th class="num">Tense</th>' : ''}<th class="num">Typical words</th><th class="hide-sm">Mostly on</th></tr></thead><tbody>${rows}</tbody></table></div>`);
-  }
-
-  function machine(m) {
-    const k = m.machine;
-    const days = k.costDaily.slice(-60);
-    const max = Math.max(...days.map((d) => d.you + d.os), 1);
-    const colW = 8, gap = 4, h = 110;
-    const cols = days.map((d, i) => {
-      const x = i * (colW + gap), hy = (d.you / max) * h, ho = (d.os / max) * h;
-      return `<g><title>${d.day}: you ${money(d.you)}, OS ${money(d.os)}</title><rect x="${x}" y="${h - hy}" width="${colW}" height="${hy}" fill="var(--ink)"/><rect x="${x}" y="${h - hy - ho}" width="${colW}" height="${Math.max(0, ho - 1.5)}" fill="var(--blue)"/></g>`;
-    }).join('');
-    const models = k.models.slice(0, 8).map((x) => `<tr><td>${esc(x.model)}</td><td class="num fig">${num(x.calls)}</td><td class="num fig">${x.out >= 1e6 ? (x.out / 1e6).toFixed(1) + 'M' : Math.round(x.out / 1e3) + 'K'}</td><td class="num fig">${x.priced ? money(x.cost) : 'n/a'}</td></tr>`).join('');
-    const toolsMax = Math.max(...k.tools.you.concat(k.tools.os).map((t) => t[1]), 1);
-    const tools = (list, cls) => list.slice(0, 10).map(([n, v]) => `<tr><td>${esc(n.replace(/^mcp__[^_]+__/, ''))}</td><td class="hide-sm" style="width:45%"><span class="bar ${cls}" style="width:${(v / toolsMax) * 100}%"></span></td><td class="num fig">${num(v)}</td></tr>`).join('');
-    const total = k.layers.you.cost + k.layers.os.cost || 1;
-    const margin = `
-      <p class="note">At API prices your sessions would have cost <b>${money(k.layers.you.cost)}</b> and your automation <b>${money(k.layers.os.cost)}</b>.<span class="n">API-equivalent; a subscription is not billed these amounts</span></p>
-      <p class="note">Your OS ran <b>${num(k.osSessions)} sessions</b> on its own, <b>${pct(k.layers.os.cost / total)}</b> of the total.</p>
-      ${k.unpricedTokens ? `<p class="note quiet">${num(k.unpricedTokens)} tokens are on models with no price set; add them under <code>usage.prices</code>.</p>` : ''}`;
-    return sheet('What it costs', margin, `
-      <svg viewBox="0 0 ${days.length * (colW + gap)} ${h + 4}" width="${days.length * (colW + gap)}" style="max-width:100%;height:auto" role="img" aria-label="API-equivalent cost per day, you and OS">
-        <line x1="0" y1="${h + 0.5}" x2="${days.length * (colW + gap)}" y2="${h + 0.5}" stroke="var(--ink-faint)"/>${cols}</svg>
-      <p class="legend"><span><i class="sw" style="background:var(--ink)"></i>your sessions</span><span><i class="sw" style="background:var(--blue)"></i>your OS</span><span>last ${days.length} days, peak ${money(max)}</span></p>
-      <div class="scroll" style="margin-top:32px"><table class="ruled"><thead><tr><th>Model</th><th class="num">Calls</th><th class="num">Output</th><th class="num">API-equivalent</th></tr></thead><tbody>${models}</tbody></table></div>
-      <div class="two" style="margin-top:32px">
-        <div class="scroll"><table class="ruled"><thead><tr><th>Tools in your sessions</th><th class="hide-sm"></th><th class="num">Calls</th></tr></thead><tbody>${tools(k.tools.you, '')}</tbody></table></div>
-        <div class="scroll"><table class="ruled"><thead><tr><th>Tools your OS used</th><th class="hide-sm"></th><th class="num">Calls</th></tr></thead><tbody>${tools(k.tools.os, 'os')}</tbody></table></div>
-      </div>`);
+    const big = real.length
+      ? `<b>${esc(top.name)}</b> took <b>${pct(top.minutes / projTotal)}</b> of your project time, about <b>${hrs(top.minutes)}</b>.`
+      : `Running your day took about <b>${hrs(day.minutes)}</b>.`;
+    const bits = [];
+    if (real.length > 3) bits.push(`Your top three cover <b>${pct(top3)}</b> of it.`);
+    if (real.length && day) bits.push(`Running your day took another <b>${hrs(day.minutes)}</b>.`);
+    const sub = bits.length ? `<p class="sub">${bits.join(' ')}</p>` : '';
+    const glance = rows(real.slice(0, 5).map((x) => ({ label: esc(x.name), v: x.minutes, text: hrs(x.minutes) })));
+    const max = Math.max(...p.map((x) => x.minutes), 1);
+    const trs = p.map((x) => `<tr${x.day ? ' class="day"' : ''}><td>${esc(x.name)}</td>
+      <td style="width:34%"><span class="bar" style="width:${(x.minutes / max) * 100}%"></span></td>
+      <td class="num">${hrs(x.minutes)}</td><td class="num">${num(x.prompts)}</td>
+      <td class="num hide-sm">${weekCols(x.weekly.slice(-12))}</td></tr>`).join('');
+    const more = `<div class="scroll"><table class="ruled"><thead><tr><th>Project</th><th>Time</th><th class="num">Hours</th><th class="num">Messages</th><th class="num hide-sm">Last 12 weeks</th></tr></thead><tbody>${trs}</tbody></table></div>
+      ${day ? `<p class="d-note">Day to day is ${pct(day.minutes / total)} of all your hours.</p>` : ''}`;
+    return panel(m, 'projects', 'What you work on', { big, sub, glance, more });
   }
 
   // Tune state lives outside the render so a live redraw never re-enables a running job.
   let tuneState = 'idle';
   const TUNE_TEXT = { running: 'Tuning, this takes a few minutes. Keep the inkprint window in your terminal open.', done: 'Tuned to your messages, and every message has been scored again with it.', failed: 'Tuning failed. Is your claude or codex CLI signed in?' };
 
+  function mood(m) {
+    const t = m.tone;
+    if (!m.mood || !m.mood.scored) {
+      return panel(m, 'mood', 'How you sound', { big: "Tone isn't set up yet.", sub: `<p class="sub">The mood model that ships with inkprint is missing from this install. Run <code>npx github:jarrheyd/inkprint</code> again to put it back.</p>` });
+    }
+    const b = m.words.base, w = m.thisWeek;
+    const moods = Object.entries(b.moods || {}).sort((a, c) => c[1] - a[1]);
+    const big = w && w.now && w.now.neg != null && w.base && w.base.neg
+      ? `This week <b>${pct(w.now.neg)}</b>${arrow(w.now.neg, w.base.neg, true, pct)} of your messages read tense, against <b>${pct(w.base.neg)}</b> usually.`
+      : `<b>${pct(b.neg)}</b> of your messages read tense and <b>${pct(b.pos)}</b> upbeat.`;
+    const tenseProj = Object.entries(m.projectProfiles).filter(([, p]) => p.n >= 25 && p.neg != null).sort((a, c) => c[1].neg - a[1].neg);
+    const sub = `<p class="sub">Most of the time you sound <b>${esc(moods[0] ? moods[0][0] : 'flat')}</b>.${tenseProj.length > 1 ? ` You're most tense on <b>${esc(tenseProj[0][0])}</b> and least on <b>${esc(tenseProj[tenseProj.length - 1][0])}</b>.` : ''}</p>`;
+    const wk = m.mood.weeks.filter((x) => x.neg + x.flat + x.pos > 0).slice(narrow() ? -10 : -16);
+    const share = wk.map((x) => x.neg / (x.neg + x.flat + x.pos));
+    const usualNeg = (w && w.base && w.base.neg) || b.neg;
+    const glance = cols(share, 'Share of tense messages per week', (v) => (v > usualNeg * 1.1 ? 'red' : '')) + `<div class="axis"><span>${wk[0] ? esc(shortDate(wk[0].start)) : ''}</span><span>tense share per week, red when above usual</span><span>this week</span></div>`;
+    const colW = 28, gap = 8, h = 120;
+    const bars = wk.map((x, i) => {
+      const n = x.neg + x.flat + x.pos, px = i * (colW + gap);
+      const hn = (x.neg / n) * h, hp = (x.pos / n) * h, hf = h - hn - hp;
+      return `<g><title>${x.week}: ${pct(x.neg / n)} tense, ${pct(x.pos / n)} upbeat, ${n} messages</title>
+        <rect x="${px}" y="0" width="${colW}" height="${Math.max(0, hp - 1)}" rx="2" fill="var(--ink)"/>
+        <rect x="${px}" y="${hp}" width="${colW}" height="${Math.max(0, hf - 1)}" rx="2" fill="var(--r1)"/>
+        <rect x="${px}" y="${hp + hf}" width="${colW}" height="${hn}" rx="2" fill="var(--red)"/>
+        <text x="${px}" y="${h + 14}" class="fig">${Number(x.start.slice(8))}</text>${i === 0 || x.start.slice(5, 7) !== wk[i - 1].start.slice(5, 7) ? `<text x="${px}" y="${h + 27}" class="fig">${esc(shortDate(x.start).split(' ')[0])}</text>` : ''}</g>`;
+    }).join('');
+    const agree = t && t.heldOut ? t.heldOut.polarity.agree : null;
+    const mix = moods.map(([k, v]) => `<tr><td>${esc(k)}</td><td style="width:55%"><span class="bar" style="width:${v * 100}%"></span></td><td class="num">${pct(v)}</td></tr>`).join('');
+    const tp = tenseProj.slice(0, 8).map(([k, p]) => `<tr><td>${esc(k)}</td><td class="num">${pct(p.neg)}</td><td class="num">${pct(p.pos)}</td><td class="num">${num(p.n)}</td></tr>`).join('');
+    const model = m.toneModel === 'yours'
+      ? `<p class="d-note">Scored by a classifier trained on ${t ? num(t.labels) : 'a sample'} of your messages${agree != null ? `; it matches the labeling model on tense, flat or upbeat ${pct(agree)} of the time` : ''}. Read it as a trend, not a verdict on any one message.</p>`
+      : `<p class="d-note">Scored by a general model, trained on made-up work messages and run on this machine. It knows work chat in general, not how you in particular sound.</p>
+         ${window.__SNAPSHOT__ ? '' : `<p class="d-note">Tuning sends a sample of 800 of your messages through your <code>claude</code> or <code>codex</code> CLI to be labeled, about 120k tokens once on your own plan, then trains here. After that, scoring stays on this machine.</p>
+         <p class="ctl"><button class="pill" id="tune" type="button" ${tuneState === 'running' || tuneState === 'done' ? 'disabled' : ''}>Tune it to me</button><span class="d-note" id="tune-status" role="status">${TUNE_TEXT[tuneState] || ''}</span></p>`}`;
+    const more = `<div><svg viewBox="0 0 ${wk.length * (colW + gap)} ${h + 30}" width="${wk.length * (colW + gap)}" style="max-width:100%;height:auto" role="img" aria-label="Share of tense and upbeat messages per week">${bars}</svg>
+      <p class="legend"><span><i class="sw" style="background:var(--ink)"></i>upbeat, on top</span><span><i class="sw" style="background:var(--r1)"></i>flat</span><span><i class="sw" style="background:var(--red)"></i>tense, at the bottom</span><span>one column per week</span></p></div>
+      <div class="two"><table class="ruled"><thead><tr><th>Mood mix</th><th><span class="sr">Share bar</span></th><th class="num">Share</th></tr></thead><tbody>${mix}</tbody></table>
+      <div class="scroll"><table class="ruled"><thead><tr><th>Project</th><th class="num">Tense</th><th class="num">Upbeat</th><th class="num">Messages</th></tr></thead><tbody>${tp}</tbody></table></div></div>
+      ${model}`;
+    return panel(m, 'mood', 'How you sound', { big, sub, glance, more });
+  }
+
   const CH = { ai: 'To your AI', whatsapp: 'WhatsApp', telegram: 'Telegram', discord: 'Discord', email: 'Email', gchat: 'Google Chat', teams: 'Teams', slack: 'Slack' };
 
   function voice(m) {
     const v = m.voice || { cards: [], rules: [] };
-    if (!v.cards.length) return sheet('How you write', '<p class="note">No voice cards yet.</p>', '<p class="empty">Cards build from how you write to your AI, and from your own messages whenever your AI reads a chat or inbox for you. Nothing to set up; they fill in as you work.</p>');
-    const rules = v.rules.length
-      ? `<p class="note">You've told your AI ${v.rules.map((r) => `<b>${esc(r.label)}</b> (${r.count} times)`).join(', ')}. Drafts that break these get stopped before you see them.</p>`
-      : '';
+    if (!v.cards.length) return panel(m, 'voice', 'How you write', { big: 'No voice cards yet.', sub: `<p class="sub">Cards build from how you write to your AI, and from your own messages whenever your AI reads a chat or inbox for you, so they fill in as you work.</p>` });
     const byNeed = (a, b) => (b.base - a.base) || (!!a.to - !!b.to) || b.sends - a.sends;
     const all = v.cards.slice().sort(byNeed);
-    const people = all.filter((c) => c.to);
-    const cards = all.filter((c) => !c.to).concat(people.slice(0, 5));
-    const more = people.length - 5;
-    const rows = cards.map((c) => `<tr>
+    const people = all.filter((c) => c.to && !/^\d+$/.test(c.to)); // a bare number is a chat we couldn't name
+    const chan = all.filter((c) => !c.to).sort((a, b) => b.base - a.base || b.words - a.words);
+    const places = chan.filter((c) => !c.base);
+    const shortest = places.slice().sort((a, b) => a.words - b.words)[0];
+    const longest = places.slice().sort((a, b) => b.words - a.words)[0];
+    const r = v.rules[0];
+    const spread = shortest && longest && shortest !== longest
+      ? `You write shortest on <b>${esc(CH[shortest.channel] || shortest.channel)}</b>, ${ink(shortest.words + ' words')}, and longest on <b>${esc(CH[longest.channel] || longest.channel)}</b>, ${ink(longest.words + ' words')}.` : '';
+    const base = chan.find((c) => c.base) || chan[0];
+    const big = r ? `You've told your AI "<b>${esc(r.label)}</b>" ${ink(r.count + ' times')}.` : spread || `You write about <b>${base.words}</b> words to your AI.`;
+    const sub = r ? `${v.rules.length > 1 ? `<p class="sub">Also ${v.rules.slice(1).map((x) => `"${esc(x.label)}" ${ink(x.count + ' times')}`).join(', ')}, and drafts that break these get stopped.</p>` : ''}${spread ? `<p class="sub">${spread}</p>` : ''}` : '';
+    const glance = rows(chan.map((c) => ({ label: esc(c.base ? 'To your AI' : CH[c.channel] || c.channel), v: c.words, text: `${c.words} words` })));
+    const cards = chan.concat(people.slice(0, 5));
+    const extra = people.length - 5;
+    const trs = cards.map((c) => `<tr>
       <td>${c.base ? 'To your AI' : esc(CH[c.channel] || c.channel)}${c.to ? `, ${c.group ? 'in' : 'to'} ${masked(c.to, true)}` : ''}</td>
-      <td class="num fig">${num(c.sends)}</td><td class="num fig">${c.words}</td>
-      <td class="num fig hide-sm">${c.base || c.channel === 'email' ? '' : pct(c.split)}</td>
-      <td class="num fig hide-sm">${pct(c.greeting)}</td><td class="num fig">${pct(c.lower)}</td></tr>`).join('') + (more > 0 ? `<tr><td colspan="6" class="quiet">and ${more} more people and groups with their own card</td></tr>` : '');
-    const chan = cards.filter((c) => !c.base && !c.to);
-    const shortest = chan.slice().sort((a, b) => a.words - b.words)[0];
-    const longest = chan.slice().sort((a, b) => b.words - a.words)[0];
-    const margin = `${rules}
-      ${shortest && longest && shortest !== longest ? `<p class="note">You write shortest on <b>${esc(CH[shortest.channel])}</b> (${shortest.words} words) and longest on <b>${esc(CH[longest.channel])}</b> (${longest.words}).</p>` : ''}
-      <p class="note quiet">Every draft your AI writes for you is checked against the card for that channel and person. Cards come from your own sent messages; ones your AI sent for you are left out.</p>`;
-    return sheet('How you write', margin, `<div class="scroll"><table class="ruled"><thead><tr><th>Where</th><th class="num">Messages</th><th class="num">Typical words</th><th class="num hide-sm">Split into several</th><th class="num hide-sm">Greets</th><th class="num">Lowercase</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+      <td class="num">${num(c.sends)}</td><td class="num">${c.words}</td>
+      <td class="num hide-sm">${c.base || c.channel === 'email' ? '' : pct(c.split)}</td>
+      <td class="num hide-sm">${pct(c.greeting)}</td><td class="num">${pct(c.lower)}</td></tr>`).join('') + (extra > 0 ? `<tr><td colspan="6" class="d-note wrap">and ${extra} more people and groups with their own card</td></tr>` : '');
+    const more = `<div class="scroll"><table class="ruled"><thead><tr><th>Where</th><th class="num">Messages</th><th class="num">Typical words</th><th class="num hide-sm">Split into several</th><th class="num hide-sm">Greets</th><th class="num">Lowercase</th></tr></thead><tbody>${trs}</tbody></table></div>
+      <p class="d-note">Every draft your AI writes for you is checked against the card for that channel and person.</p>`;
+    return panel(m, 'voice', 'How you write', { big, sub, glance, more });
+  }
+
+  function words(m) {
+    const w = m.words, b = w.base;
+    const big = `Your typical message is <b>${b.medianWords}</b> words, and <b>${pct(b.lower)}</b> are all lowercase.`;
+    const sub = `<p class="sub">When you push back you keep it to about <b>${w.correctionMedianWords}</b> words, and that's <b>${pct(b.correction)}</b> of your messages.</p>`;
+    const glance = `<div class="chips">${w.bigrams.slice(0, 10).map(([k, v]) => `<span>${esc(k)}<b>${v}</b></span>`).join('')}</div>`;
+    const phrases = w.bigrams.slice(0, 16).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join('');
+    const single = w.top.slice(0, 16).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join('');
+    const hasTone = Object.values(w.timeProfiles).some((p) => p.neg != null);
+    const tp = Object.entries(w.timeProfiles).map(([k, p]) => `<tr><td>${esc(k)}</td><td class="num">${num(p.n)}</td><td class="num">${p.medianWords}</td><td class="num">${pct(p.correction)}</td><td class="num">${pct(p.question)}</td>${hasTone ? `<td class="num">${p.neg != null ? pct(p.neg) : ''}</td>` : ''}</tr>`).join('');
+    const parts = w.particles.length ? `<p class="d-note">Filler words you use: ${w.particles.slice(0, 8).map(([k, v]) => `<b>${esc(k)}</b> ${v}`).join(', ')}.</p>` : '';
+    const more = `<p class="d-note">The average is ${Math.round(b.avgWords)} words, pulled up by pasted text. You laugh in ${pct(b.laugh)} of your messages.</p>${parts}
+      <div class="two"><table class="ruled"><thead><tr><th>Phrases</th><th class="num">Times</th></tr></thead><tbody>${phrases}</tbody></table>
+      <table class="ruled"><thead><tr><th>Words</th><th class="num">Times</th></tr></thead><tbody>${single}</tbody></table></div>
+      <div class="scroll"><table class="ruled"><thead><tr><th>Time of day</th><th class="num">Messages</th><th class="num">Typical words</th><th class="num">Push back</th><th class="num">Questions</th>${hasTone ? '<th class="num">Tense</th>' : ''}</tr></thead><tbody>${tp}</tbody></table></div>`;
+    return panel(m, 'words', 'The words you use', { big, sub, glance, more });
+  }
+
+  function people(m) {
+    const p = m.people.filter((x) => x.mentions >= 3).slice(0, 16);
+    if (!p.length) return panel(m, 'people', 'Who comes up', { big: 'No one from your people file comes up yet.', sub: `<p class="sub">Names come from <code>People/people.md</code> and <code>usage.aliases</code> in your config.</p>` });
+    const big = `${masked(p[0].name, true)} comes up most, in <b>${p[0].mentions}</b> of your messages.`;
+    const glance = rows(p.slice(0, 5).map((x) => ({ label: masked(x.name, true), v: x.mentions, text: String(x.mentions) })));
+    const hasTone = p.some((x) => x.profile.neg != null);
+    const trs = p.map((x) => `<tr><td>${masked(x.name, true)}</td><td class="num">${x.mentions}</td>
+      <td class="num hide-sm">${weekCols(x.weekly.slice(-12))}</td>
+      ${hasTone ? `<td class="num">${x.profile.neg != null ? pct(x.profile.neg) : ''}</td>` : ''}<td class="num">${Math.round(x.profile.medianWords)}</td>
+      <td class="hide-sm">${x.projects.map(([k]) => esc(k)).join(', ')}</td></tr>`).join('');
+    const more = `<div class="scroll"><table class="ruled"><thead><tr><th>Person</th><th class="num">Mentions</th><th class="num hide-sm">Last 12 weeks</th>${hasTone ? '<th class="num">Tense</th>' : ''}<th class="num">Typical words</th><th class="hide-sm">Mostly on</th></tr></thead><tbody>${trs}</tbody></table></div>`;
+    return panel(m, 'people', 'Who comes up', { big, glance, more, tools: namesBtn('people') });
+  }
+
+  function cost(m) {
+    const k = m.machine;
+    const total = k.layers.you.cost + k.layers.os.cost || 1;
+    const big = `Your sessions would have cost <b>${money(k.layers.you.cost)}</b>, and your automation <b>${money(k.layers.os.cost)}</b>.`;
+    const sub = `<p class="sub">That's at API prices, which a subscription isn't billed. Your OS ran <b>${num(k.osSessions)}</b> sessions on its own, which is <b>${pct(k.layers.os.cost / total)}</b> of the cost.</p>`;
+    const days = k.costDaily.slice(narrow() ? -30 : -60);
+    const max = Math.max(...days.map((d) => d.you + d.os), 1);
+    const glance = `<div class="cols" role="img" aria-label="API-equivalent cost per day, your sessions and your OS">${days.map((d) => `<span title="${d.day}: you ${money(d.you)}, OS ${money(d.os)}"><i style="height:${(d.os / max) * 100}%;background:var(--r3)"></i><i style="height:${(d.you / max) * 100}%;background:var(--ink)"></i></span>`).join('')}</div>
+      <div class="axis"><span>last ${days.length} days</span><span><i class="sw" style="background:var(--ink)"></i>you <i class="sw" style="background:var(--r3);margin-left:10px"></i>your OS</span><span>peak ${money(max)}</span></div>`;
+    const models = k.models.slice(0, 8).map((x) => `<tr><td>${esc(x.model)}</td><td class="num">${num(x.calls)}</td><td class="num">${x.out >= 1e6 ? (x.out / 1e6).toFixed(1) + 'M' : Math.round(x.out / 1e3) + 'K'}</td><td class="num">${x.priced ? money(x.cost) : 'n/a'}</td></tr>`).join('');
+    const toolsMax = Math.max(...k.tools.you.concat(k.tools.os).map((t) => t[1]), 1);
+    const tools = (list, cls) => list.slice(0, 10).map(([n, v]) => `<tr><td>${esc(n.replace(/^mcp__.*__/, ''))}</td><td class="hide-sm" style="width:40%"><span class="bar ${cls}" style="width:${(v / toolsMax) * 100}%"></span></td><td class="num">${num(v)}</td></tr>`).join('');
+    const more = `<div class="scroll"><table class="ruled"><thead><tr><th>Model</th><th class="num">Calls</th><th class="num">Output</th><th class="num">API-equivalent</th></tr></thead><tbody>${models}</tbody></table></div>
+      <div class="two"><div class="scroll"><table class="ruled"><thead><tr><th>Tools in your sessions</th><th class="hide-sm"><span class="sr">Bar</span></th><th class="num">Calls</th></tr></thead><tbody>${tools(k.tools.you, '')}</tbody></table></div>
+      <div class="scroll"><table class="ruled"><thead><tr><th>Tools your OS used</th><th class="hide-sm"><span class="sr">Bar</span></th><th class="num">Calls</th></tr></thead><tbody>${tools(k.tools.os, 'os')}</tbody></table></div></div>
+      ${k.unpricedTokens ? `<p class="d-note">${num(k.unpricedTokens)} tokens are on models with no price set; add them under <code>usage.prices</code>.</p>` : ''}`;
+    return panel(m, 'cost', 'What it costs', { big, sub, glance, more });
   }
 
   // The share card: drawn here, saved here, nothing uploaded. Names are swapped out unless you keep them.
@@ -498,59 +540,61 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     const W = 1080, H = 1350, c = document.createElement('canvas');
     c.width = W; c.height = H;
     const g = c.getContext('2d');
-    // The card always uses the daylight pad, whatever theme the page is in.
-    const LIGHT = { '--pad': '#E6EFD8', '--grid-minor': '#CFE0B8', '--grid-major': '#B3CB93', '--ink': '#1B2617', '--ink-soft': '#46573B', '--red': '#B7362F' };
-    const col = (v) => LIGHT[v];
-    g.fillStyle = col('--pad'); g.fillRect(0, 0, W, H);
-    g.lineWidth = 1;
-    for (let x = 0; x <= W; x += 20) { g.strokeStyle = x % 100 ? col('--grid-minor') : col('--grid-major'); g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, H); g.stroke(); }
-    for (let y = 0; y <= H; y += 20) { g.strokeStyle = y % 100 ? col('--grid-minor') : col('--grid-major'); g.beginPath(); g.moveTo(0, y + .5); g.lineTo(W, y + .5); g.stroke(); }
-    g.fillStyle = col('--red'); g.fillRect(96, 0, 3, H);
-    const font = (w, px) => `${w} ${px}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-    const text = (t, x, y, w, px, color, maxW) => {
-      g.font = font(w, px); g.fillStyle = color || col('--ink');
-      const words = String(t).split(' '); let line = ''; let yy = y;
-      for (const wd of words) { const test = line ? line + ' ' + wd : wd; if (maxW && g.measureText(test).width > maxW && line) { g.fillText(line, x, yy); line = wd; yy += px * 1.3; } else line = test; }
-      g.fillText(line, x, yy); return yy + px * 1.3;
+    // The card always uses the light colors, whatever theme the page is in.
+    const GROUND = '#FAFAF9', PANEL = '#EFEFEE', INK = '#111110', SOFT = '#62625E';
+    g.fillStyle = GROUND; g.fillRect(0, 0, W, H);
+    g.fillStyle = PANEL; g.beginPath(); g.roundRect(48, 48, W - 96, H - 96, 56); g.fill();
+    const font = (px) => `600 ${px}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const X = 120, MAXW = W - 240;
+    // Writes a sentence word by word: words with a number in ink, the rest gray, wrapping at MAXW.
+    const rich = (t, y, px, lead) => {
+      g.font = font(px);
+      const space = g.measureText(' ').width;
+      let x = X;
+      for (const wd of String(t).split(' ')) {
+        const wdW = g.measureText(wd).width;
+        if (x > X && x + wdW > X + MAXW) { x = X; y += px * lead; }
+        // Only the number itself goes in ink; brackets and commas around it stay gray.
+        const [, pre, core, post] = wd.match(/^(\W*)(.*?)([^\w%$]*)$/);
+        let cx = x;
+        for (const [part, col] of [[pre, SOFT], [core, /\d/.test(core) ? INK : SOFT], [post, SOFT]]) {
+          if (!part) continue;
+          g.fillStyle = col; g.fillText(part, cx, y); cx += g.measureText(part).width;
+        }
+        x += wdW + space;
+      }
+      return y + px * lead;
     };
     const w = m.thisWeek || { now: {}, base: {} };
     const alias = new Map(); let n = 0;
-    const hide = (name, kind) => {
+    const hide = (name) => {
       if (keepNames) return name;
-      if (kind === 'person') return 'a teammate';
       if (!alias.has(name)) alias.set(name, 'Project ' + String.fromCharCode(65 + n++));
       return alias.get(name);
     };
-    let y = text('How I work with AI', 140, 170, 700, 64);
-    y = text(`Week of ${shortDate(w.start || m.range.to)}`, 140, y + 4, 400, 30, col('--ink-soft'));
-    const stat = (label, value, x) => { text(value, x, y + 120, 700, 76); text(label, x, y + 164, 400, 26, col('--ink-soft')); };
-    stat('messages this week', num(w.now.messages || 0), 140);
-    stat('day streak', String(m.you.streak.current), 480);
-    stat('typical words', String(m.words.base.medianWords), 740);
-    y += 260;
-    g.fillStyle = col('--ink'); g.fillRect(140, y, 800, 2); y += 70;
-    // A mix: what moved this week, two projects, one person, then your top rule.
+    g.font = font(34); g.fillStyle = SOFT; g.fillText(`My week with AI, from ${shortDate(w.start || m.range.to)}`, X, 190);
+    const usual = w.base && w.base.messages ? Math.round(w.base.messages) : 0;
+    let y = rich(`${num(w.now.messages || 0)} messages this week${usual ? `, against ${num(usual)} in a usual week.` : '.'}`, 300, 84, 1.08);
+    y = rich(`A ${m.you.streak.current} day streak, and ${m.words.base.medianWords} words in a typical message.`, y + 40, 44, 1.2);
+    // The card speaks as you: the page's "you" lines turned into "I".
+    const mine = (t) => String(t).replace(/\bYou're\b/g, "I'm").replace(/\byou're\b/g, "I'm").replace(/\b[Yy]ou\b/g, 'I').replace(/\byour\b/g, 'my').replace(/\bYour\b/g, 'My');
+    // A mix: one thing that moved this week, one project, one person, then your top rule.
     const tells = [];
-    for (const x of (w.moved || []).slice(0, 1)) tells.push(x.text);
+    for (const x of (w.moved || []).slice(0, 1)) tells.push(mine(x.text));
     const comb = m.contexts.combined || [];
-    for (const d of comb.filter((x) => x.kind === 'project').slice(0, 2)) tells.push(d.text.replace(d.name, hide(d.name, 'project')));
+    for (const d of comb.filter((x) => x.kind === 'project').slice(0, 1)) tells.push(mine(d.text.split(d.name).join(hide(d.name))));
     // For people, message length mostly tracks pasted text, so pick a difference in how you talk instead.
     const person = comb.find((x) => x.kind === 'person' && x.items.some((i) => i.metric !== 'medianWords'));
     if (person) {
-      const lead = keepNames ? `When ${person.name} comes up, you` : 'When a certain teammate comes up, you';
       const i = person.items.find((x) => x.metric !== 'medianWords');
-      if (i && i.phrase) tells.push(`${lead} ${i.phrase}.`);
+      if (i && i.phrase) tells.push(`${keepNames ? `When ${person.name} comes up, I` : 'When a certain teammate comes up, I'} ${i.phrase}.`);
     }
-    if (m.voice && m.voice.rules && m.voice.rules[0]) tells.push(`My most repeated note to my AI: "${m.voice.rules[0].label}" (${m.voice.rules[0].count} times).`);
-    // Measure the lines first so they sit centered in the space above the footer.
-    g.font = font(400, 34);
-    const lineCount = (t) => { let n = 1, line = ''; for (const wd of String(t).split(' ')) { const test = line ? line + ' ' + wd : wd; if (g.measureText(test).width > 800 && line) { n++; line = wd; } else line = test; } return n; };
-    const pick = tells.filter(Boolean).slice(0, 4);
-    const block = pick.reduce((a, t) => a + lineCount(t) * 34 * 1.3 + 30, 0);
-    y = Math.max(y, y + ((H - 140) - y - block) / 2);
-    for (const t of pick) { y = text(t, 140, y, 400, 34, col('--ink'), 800) + 30; }
-    text('made with inkprint, on my machine', 140, H - 90, 400, 26, col('--ink-soft'));
-    return c.toDataURL('image/png');
+    if (m.voice && m.voice.rules && m.voice.rules[0]) tells.push(`My most repeated note to my AI: "${m.voice.rules[0].label}", ${m.voice.rules[0].count} times.`);
+    y += 40;
+    for (const t of tells.filter(Boolean).slice(0, 4)) { if (y > H - 200) break; y = rich(t, y, 34, 1.3) + 20; }
+    g.font = font(26); g.fillStyle = SOFT; g.fillText('made with inkprint, on my machine', X, H - 120);
+    c.lines = [`${num(w.now.messages || 0)} messages this week.`].concat(tells.slice(0, 4));
+    return c;
   }
 
   function openShare(m) {
@@ -558,19 +602,27 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     if (!d) {
       d = document.createElement('dialog'); d.id = 'share-dialog'; d.className = 'share'; d.setAttribute('aria-labelledby', 'share-title');
       d.innerHTML = `<h2 id="share-title">Your week as an image</h2><img alt="Your week with AI, as an image" width="1080" height="1350" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><div class="row"><label><input type="checkbox" id="share-names"> Show real project and people names</label>
-        <span class="ctl"><button class="toggle" id="share-close" type="button">Close</button><a class="toggle" id="share-save" download="my-week-with-ai.png" style="text-decoration:none">Save image</a></span></div>`;
+        <span class="ctl"><button class="pill" id="share-close" type="button">Close</button><a class="pill" id="share-save" download="my-week-with-ai.png">Save image</a></span></div>`;
       document.body.appendChild(d);
       d.querySelector('#share-close').addEventListener('click', () => d.close());
-      d.querySelector('#share-names').addEventListener('change', () => draw());
+      d.querySelector('#share-names').addEventListener('change', () => drawShare(d));
+      d.addEventListener('close', () => { if ($('#share')) $('#share').focus(); });
     }
-    const draw = () => { const url = shareCard(m, d.querySelector('#share-names').checked); d.querySelector('img').src = url; d.querySelector('#share-save').href = url; };
-    draw();
+    d._m = m; // the toggle always redraws the latest numbers, not the ones from the first open
+    drawShare(d);
     d.showModal();
+  }
+  function drawShare(d) {
+    const c = shareCard(d._m, d.querySelector('#share-names').checked);
+    const url = c.toDataURL('image/png');
+    const img = d.querySelector('img');
+    img.src = url; img.alt = c.lines.join(' ');
+    d.querySelector('#share-save').href = url;
   }
 
   function render(m, force) {
     if (!m || !m.you || !m.you.prompts) {
-      $('#pad').innerHTML = `<p class="empty">No messages found yet. This page reads Claude Code transcripts from <code>~/.claude/projects</code> and Codex sessions from <code>~/.codex/sessions</code>. Use either tool, then reload.</p>`;
+      $('#page').innerHTML = `<p class="empty">No messages found yet. This page reads Claude Code transcripts from <code>~/.claude/projects</code> and Codex sessions from <code>~/.codex/sessions</code>. Use either tool, then reload.</p>`;
       return;
     }
     const status = () => { $('#status').innerHTML = window.__SNAPSHOT__ ? `Snapshot from ${new Date(m.generated).toLocaleString()}` : `<span class="dot" aria-hidden="true"></span>Live, updated ${new Date(m.generated).toLocaleTimeString()}`; };
@@ -578,29 +630,39 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     const sig = (x) => JSON.stringify([x.you.prompts, x.you.words, x.machine.layers, x.mood && x.mood.scored, x.toneModel, x.voice && x.voice.cards.length, narrow()]);
     if (last && force !== true && sig(last) === sig(m)) { last = m; status(); return; }
     const before = last && last.you.prompts;
-    const focusId = document.activeElement && document.activeElement.id;
-    $('#pad').innerHTML = titleBlock(m) + differ(m) + when(m) + projects(m) + mood(m) + voice(m) + words(m) + people(m) + machine(m);
+    const a = document.activeElement;
+    // Remember what had focus by id or data key, so a redraw can hand it back.
+    const key = a && a.dataset && ['more', 'note', 'names'].find((k) => a.dataset[k]);
+    const focusSel = a && a.id ? '#' + a.id : key ? `[data-${key}="${a.dataset[key]}"]` : null;
+    const top = `<header class="top"><h1>How you work with AI</h1><span class="status" id="status"></span>${window.__SNAPSHOT__ ? '' : '<button class="pill" id="share" type="button">Share your week</button>'}</header>`;
+    const panels = [week(m), differ(m), when(m), projects(m), mood(m), voice(m), words(m), people(m), cost(m)].filter(Boolean);
+    $('#page').innerHTML = top + panels.join('');
+    document.querySelectorAll('.panel').forEach((p, i) => p.style.setProperty('--i', i));
+    $('#page').classList.toggle('enter', firstPaint);
+    firstPaint = false;
     if (before != null && before !== m.you.prompts) document.querySelectorAll('[data-k]').forEach((n) => n.classList.add('fresh'));
     last = m;
     status();
-    $('#names').addEventListener('click', (e) => {
+    document.querySelectorAll('.names-btn').forEach((btn) => btn.addEventListener('click', () => {
       const on = document.body.classList.toggle('names');
-      e.currentTarget.setAttribute('aria-pressed', String(on));
-      e.currentTarget.textContent = on ? 'Hide names' : 'Show names';
-    });
+      document.querySelectorAll('.names-btn').forEach((x) => { x.setAttribute('aria-pressed', String(on)); x.textContent = on ? 'Hide names' : 'Show names'; });
+    }));
     if ($('#share')) $('#share').addEventListener('click', () => openShare(last));
-    document.querySelectorAll('.info[data-info]').forEach((b) => b.addEventListener('click', () => showInfo(b.dataset.info, last)));
-    document.querySelectorAll('.info[data-sheet]').forEach((b) => b.addEventListener('click', () => {
-      const t = b.dataset.sheet;
-      openSheet = openSheet === t ? null : t;
-      document.querySelectorAll('.info[data-sheet]').forEach((x) => {
-        const open = x.dataset.sheet === openSheet;
+    document.querySelectorAll('.info[data-note]').forEach((b) => b.addEventListener('click', () => {
+      openNote = openNote === b.dataset.note ? null : b.dataset.note;
+      document.querySelectorAll('.info[data-note]').forEach((x) => {
+        const open = x.dataset.note === openNote;
         x.setAttribute('aria-expanded', String(open));
-        const n = document.getElementById(x.getAttribute('aria-controls'));
-        if (n) n.hidden = !open;
+        document.getElementById('n-' + x.dataset.note).hidden = !open;
       });
     }));
-    if (openInfo) { const k = openInfo; openInfo = null; showInfo(k, last); } // a live redraw keeps the open note
+    document.querySelectorAll('.more[data-more]').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.more, open = !openMore.has(k);
+      if (open) openMore.add(k); else openMore.delete(k);
+      b.setAttribute('aria-expanded', String(open));
+      b.textContent = open ? 'Less' : 'More';
+      document.getElementById('d-' + k).hidden = !open;
+    }));
     if ($('#tune')) $('#tune').addEventListener('click', async (e) => {
       const btn = e.currentTarget;
       btn.disabled = true;
@@ -611,7 +673,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
       } catch { tuneState = 'failed'; btn.disabled = false; }
       $('#tune-status').textContent = tuneState === 'failed' ? "Couldn't start tuning; is the inkprint window in your terminal still open?" : TUNE_TEXT.running;
     });
-    if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus({ preventScroll: true });
+    if (focusSel && $(focusSel)) $(focusSel).focus({ preventScroll: true });
   }
 
   async function load() {
@@ -619,7 +681,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
       const m = window.__SNAPSHOT__ || await (await fetch('/api/metrics', { cache: 'no-store' })).json();
       render(m);
     } catch (e) {
-      $('#pad').innerHTML = `<p class="empty">Couldn't read the metrics (${esc(e.message)}). Is <code>node serve.js</code> still running?</p>`;
+      $('#page').innerHTML = `<p class="empty">Couldn't read the metrics (${esc(e.message)}). Is <code>node serve.js</code> still running?</p>`;
     }
   }
 
@@ -627,6 +689,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   if (!window.__SNAPSHOT__ && window.EventSource) {
     const es = new EventSource('/api/stream');
     es.addEventListener('update', load);
+    es.onerror = () => { if ($('#status')) $('#status').textContent = 'Offline, retrying'; };
     es.addEventListener('tune', (e) => {
       tuneState = JSON.parse(e.data).state;
       if ($('#tune-status')) $('#tune-status').textContent = TUNE_TEXT[tuneState] || '';
