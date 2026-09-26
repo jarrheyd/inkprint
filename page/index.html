@@ -46,7 +46,18 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   .title-block { display: grid; grid-template-columns: 2fr repeat(4, 1fr); border: 1.5px solid var(--ink); background: var(--pad); }
   .title-block > div { padding: 8px 16px; border-left: 1px solid var(--ink); min-width: 0; }
   .title-block > div:first-child { border-left: 0; }
-  .tb-label { font-size: 11px; color: var(--ink-soft); display: block; }
+  .tb-label { font-size: 11px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+  .info {
+    font: 600 10px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-soft); background: transparent;
+    width: 16px; height: 16px; border: 1px solid var(--ink-soft); border-radius: 50%; padding: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; position: relative;
+  }
+  .info::after { content: ""; position: absolute; inset: -12px; } /* a bigger target than the mark itself */
+  .info:hover, .info[aria-expanded="true"] { color: var(--pad); background: var(--ink); border-color: var(--ink); }
+  .info:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .tb-note { border: 1.5px solid var(--ink); border-top: 0; padding: 12px 16px; font-size: 15px; line-height: 1.5; max-width: none; }
+  .tb-note[hidden] { display: none; }
+  .tb-note b { font-weight: 650; }
   .tb-value { font-size: 20px; font-weight: 600; line-height: 1.25; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tb-sub { font-size: 12px; color: var(--ink-soft); }
   .title-block h1 { font-size: 22px; margin: 0; line-height: 1.25; letter-spacing: -0.01em; font-weight: 650; }
@@ -181,15 +192,38 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   const narrow = () => window.innerWidth < 760;
   const shortDate = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
+  // What each number in the title block counts, in plain words, built from the same data.
+  let openInfo = null;
+  function info(key) { return `<button class="info" type="button" data-info="${key}" aria-expanded="${openInfo === key}" aria-controls="tb-note" aria-label="Where this number comes from">i</button>`; }
+  function infoText(key, m) {
+    const y = m.you, w = m.thisWeek || { base: {} };
+    const tools = [y.byTool.claude ? `${num(y.byTool.claude)} in Claude Code` : '', y.byTool.codex ? `${num(y.byTool.codex)} in Codex` : ''].filter(Boolean).join(' and ');
+    return {
+      range: `From the oldest AI transcript on this machine to today, in your timezone (${esc(m.tz)}). Claude Code deletes transcripts after 30 days by default; inkprint keeps everything it already read, so the range keeps growing from here.`,
+      week: `Messages you typed Monday to today. <b>Usual</b> is your average over the ${w.weeksCompared || 'last few'} full weeks before this one.`,
+      messages: `Every prompt you typed yourself: ${tools || 'none yet'}, read from the transcripts on this machine. <b>Left out:</b> ${num(m.machine.osPrompts)} messages your automation wrote (scheduled runs, subagents, prompts that open with your OS's own preamble), tool results, command output, and interrupted or empty turns. The word count includes anything you pasted into those messages; the word and phrase lists further down leave pasted code and logs out.`,
+      days: `Days with at least one message you typed. <b>Hours</b> add up time inside your sessions; a gap longer than 30 minutes between two messages counts as a break, not work.`,
+      streak: `Days in a row with at least one message you typed. Today counts once you send one, so an empty morning doesn't break it.`,
+    }[key] || '';
+  }
+  function showInfo(key, m) {
+    const note = $('#tb-note');
+    openInfo = openInfo === key ? null : key;
+    document.querySelectorAll('.info').forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.info === openInfo)));
+    note.hidden = !openInfo;
+    note.innerHTML = openInfo ? infoText(openInfo, m) : '';
+  }
+
   function titleBlock(m) {
     const y = m.you, w = m.thisWeek || { now: { messages: 0 }, today: 0, start: m.range.to };
     return `<header class="title-block">
-      <div><span class="tb-label">Subject</span><h1>How you work with AI</h1><span class="tb-sub">${esc(shortDate(m.range.from))} to ${esc(shortDate(m.range.to))}, ${esc(m.tz)}</span></div>
-      <div><span class="tb-label">Week of ${esc(shortDate(w.start))}</span><span class="tb-value" data-k="week">${num(w.now.messages)}</span><span class="tb-sub" data-k="today">${num(w.today)} today${w.base && w.base.messages ? `, usual ${Math.round(w.base.messages)}` : ''}</span></div>
-      <div><span class="tb-label">Messages you typed</span><span class="tb-value" data-k="prompts">${num(y.prompts)}</span><span class="tb-sub">${num(y.words)} words</span></div>
-      <div><span class="tb-label">Active days</span><span class="tb-value">${y.activeDays}</span><span class="tb-sub">~${num(y.session.hours)}h in sessions</span></div>
-      <div><span class="tb-label">Streak</span><span class="tb-value">${y.streak.current} days</span><span class="tb-sub">longest ${y.streak.longest}</span></div>
+      <div><span class="tb-label">Subject ${info('range')}</span><h1>How you work with AI</h1><span class="tb-sub">${esc(shortDate(m.range.from))} to ${esc(shortDate(m.range.to))}, ${esc(m.tz)}</span></div>
+      <div><span class="tb-label">Week of ${esc(shortDate(w.start))} ${info('week')}</span><span class="tb-value" data-k="week">${num(w.now.messages)}</span><span class="tb-sub" data-k="today">${num(w.today)} today${w.base && w.base.messages ? `, usual ${Math.round(w.base.messages)}` : ''}</span></div>
+      <div><span class="tb-label">Messages you typed ${info('messages')}</span><span class="tb-value" data-k="prompts">${num(y.prompts)}</span><span class="tb-sub">${num(y.words)} words</span></div>
+      <div><span class="tb-label">Active days ${info('days')}</span><span class="tb-value">${y.activeDays}</span><span class="tb-sub">~${num(y.session.hours)}h in sessions</span></div>
+      <div><span class="tb-label">Streak ${info('streak')}</span><span class="tb-value">${y.streak.current} days</span><span class="tb-sub">longest ${y.streak.longest}</span></div>
     </header>
+    <p class="tb-note" id="tb-note" role="region" aria-live="polite" hidden></p>
     <div class="controls">
       <span class="status" id="status" role="status" aria-live="polite"></span>
       <span class="ctl">
@@ -535,6 +569,8 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
       e.currentTarget.textContent = on ? 'Hide names' : 'Show names';
     });
     if ($('#share')) $('#share').addEventListener('click', () => openShare(last));
+    document.querySelectorAll('.info').forEach((b) => b.addEventListener('click', () => showInfo(b.dataset.info, last)));
+    if (openInfo) { const k = openInfo; openInfo = null; showInfo(k, last); } // a live redraw keeps the open note
     if ($('#tune')) $('#tune').addEventListener('click', async (e) => {
       const btn = e.currentTarget;
       btn.disabled = true;
