@@ -1,0 +1,14 @@
+{
+  "name": "inkprint",
+  "version": "0.1.0",
+  "description": "See how you work with AI, from the transcripts already on your machine, and keep your drafts sounding like you.",
+  "license": "FSL-1.1-MIT",
+  "author": "Jarrhey De la Pena",
+  "repository": { "type": "git", "url": "git+https://github.com/jarrheyd/inkprint.git" },
+  "bin": { "inkprint": "bin/inkprint.js" },
+  "files": ["bin", "lib", "page", "models", ".claude-plugin", "commands", "skills", "hooks", "README.md", "LICENSE.md"],
+  "engines": { "node": ">=22.5" },
+  "os": ["darwin", "linux"],
+  "scripts": { "test": "INKPRINT_NO_SCAN=1 node --test" },
+  "keywords": ["claude-code", "codex", "ai", "analytics", "voice", "writing-style"]
+}

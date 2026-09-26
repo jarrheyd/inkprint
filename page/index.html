@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How you work with AI</title>
+<!--
+THESIS: your own usage read back as an engineer's computation pad; findings are margin conclusions beside the plot they come from. Refuses the KPI-card dashboard.
+OWN-WORLD: pale green engineering grid (16px minor, 80px major), dark green-black ink, one red margin rule, graphite blue for the machine series. Square, flat, no cards.
+STORY: you open it weekly, read where you differ by project, person and hour, then check when and how you worked and what it cost.
+FIRST VIEWPORT: title block filled in like a pad header across the top; below it the first sheet, "Where you differ", conclusions in the margin, gauges on the grid.
+FORM: computation pad, grounded list position 3, staging: sheets separated by perforations. Seed 064552a4.
+-->
+<style>
+  :root {
+    --pad: #E6EFD8; --grid-minor: #CFE0B8; --grid-major: #B3CB93;
+    --ink: #1B2617; --ink-soft: #46573B; --ink-faint: #7B8B70;
+    --red: #B7362F; --blue: #2D5886; --pos: #276346;
+    --r1: rgba(27, 38, 23, .14); --r2: rgba(27, 38, 23, .34); --r3: rgba(27, 38, 23, .58); --r4: rgba(27, 38, 23, .86);
+    --grid-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M16 0V80M32 0V80M48 0V80M64 0V80M0 16H80M0 32H80M0 48H80M0 64H80' stroke='%23CFE0B8' stroke-width='1'/%3E%3Cpath d='M0 0.5H80M0.5 0V80' stroke='%23B3CB93' stroke-width='1'/%3E%3C/svg%3E");
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --pad: #0E1810; --grid-minor: #18271B; --grid-major: #223826;
+      --ink: #DBE7CD; --ink-soft: #9FB291; --ink-faint: #6F8363;
+      --red: #E2675E; --blue: #86AEDB; --pos: #7FC79F;
+      --r1: rgba(219, 231, 205, .12); --r2: rgba(219, 231, 205, .3); --r3: rgba(219, 231, 205, .55); --r4: rgba(219, 231, 205, .85);
+      --grid-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M16 0V80M32 0V80M48 0V80M64 0V80M0 16H80M0 32H80M0 48H80M0 64H80' stroke='%2318271B' stroke-width='1'/%3E%3Cpath d='M0 0.5H80M0.5 0V80' stroke='%23223826' stroke-width='1'/%3E%3C/svg%3E");
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--pad); }
+  body {
+    margin: 0; color: var(--ink); background-color: var(--pad);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  /* The grid is drawn on the sheet itself, so content sits on its lines. */
+  .pad { max-width: 1120px; margin: 0 auto; padding: 32px 16px 96px; position: relative; background-image: var(--grid-svg); background-position: 16px 32px; }
+  .fig { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  a { color: inherit; }
+
+  /* Title block: the printed header of the pad, filled in. */
+  .title-block { display: grid; grid-template-columns: 2fr repeat(4, 1fr); border: 1.5px solid var(--ink); background: var(--pad); }
+  .title-block > div { padding: 8px 16px; border-left: 1px solid var(--ink); min-width: 0; }
+  .title-block > div:first-child { border-left: 0; }
+  .tb-label { font-size: 11px; color: var(--ink-soft); display: block; }
+  .tb-value { font-size: 20px; font-weight: 600; line-height: 1.25; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tb-sub { font-size: 12px; color: var(--ink-soft); }
+  .title-block h1 { font-size: 22px; margin: 0; line-height: 1.25; letter-spacing: -0.01em; font-weight: 650; }
+  .controls { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 16px 0 0; flex-wrap: wrap; }
+  .status { font-size: 12px; color: var(--ink-soft); }
+  .status .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--red); margin-right: 6px; vertical-align: 1px; }
+  button.toggle {
+    font: inherit; font-size: 13px; color: var(--ink); background: var(--pad); border: 1px solid var(--ink);
+    border-radius: 3px; padding: 4px 10px; cursor: pointer;
+  }
+  button.toggle:hover { background: var(--r1); }
+  button.toggle:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  button.toggle[aria-pressed="true"] { background: var(--ink); color: var(--pad); }
+
+  /* Sheets, separated by a perforation. */
+  .sheet { display: grid; grid-template-columns: minmax(220px, 30%) 1fr; column-gap: 32px; padding-top: 64px; position: relative; }
+  /* Perforation: a row of punched holes where the sheet tears off. */
+  .sheet + .sheet::before {
+    content: ""; position: absolute; top: 24px; left: -16px; right: -16px; height: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Ccircle cx='8' cy='4' r='2.5' fill='%237B8B70'/%3E%3C/svg%3E");
+    background-repeat: repeat-x; opacity: .7;
+  }
+  .sheet h2 { grid-column: 1 / -1; font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 16px; line-height: 1.2; }
+  .margin { position: relative; padding-right: 20px; }
+  .margin::after { content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: 2px; background: var(--red); opacity: .85; }
+  .plot { min-width: 0; }
+  .note { margin: 0 0 16px; font-size: 16px; line-height: 1.5; }
+  .note.week { font-weight: 500; }
+  .note .n { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .note b { font-weight: 650; }
+  .quiet { color: var(--ink-soft); }
+  .empty { color: var(--ink-soft); font-size: 15px; max-width: 60ch; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; background: var(--r1); padding: 1px 4px; }
+
+  /* Findings list with gauges. */
+  .finds { list-style: none; margin: 0; padding: 0; }
+  .finds li { display: grid; grid-template-columns: 1fr 180px; gap: 16px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--grid-major); }
+  .finds li:first-child { border-top: 1px solid var(--grid-major); }
+  .finds .t { font-size: 15px; }
+  .finds svg { width: 180px; height: 24px; display: block; }
+  .gauges { display: flex; flex-direction: column; }
+  .group-label { font-size: 13px; color: var(--ink-soft); margin: 16px 0 8px; font-weight: 600; }
+  .group-label:first-child { margin-top: 0; }
+
+  /* Tables drawn as ruled pad lines. */
+  .scroll { overflow-x: auto; }
+  table.ruled { width: 100%; border-collapse: collapse; }
+  table.ruled th { text-align: left; font-weight: 600; font-size: 12px; color: var(--ink-soft); padding: 4px 8px 6px 0; border-bottom: 1.5px solid var(--ink); }
+  table.ruled td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--grid-major); vertical-align: middle; }
+  table.ruled td.num, table.ruled th.num { text-align: right; }
+  table.ruled tr.day td { color: var(--ink-soft); border-top: 1.5px solid var(--ink); }
+  table.ruled tr.day .bar { background: var(--ink-faint); }
+  .bar { height: 10px; background: var(--ink); display: block; min-width: 1px; }
+  .bar.os { background: var(--blue); }
+  svg text { fill: var(--ink-soft); }
+  .mask { filter: blur(5px); user-select: none; transition: filter 180ms cubic-bezier(.2, .8, .2, 1); }
+  body.names .mask { filter: none; user-select: auto; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); margin: 8px 0 0; }
+  .sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+  .sw.hatch { background: repeating-linear-gradient(45deg, var(--red) 0 2px, transparent 2px 4px); outline: 1px solid var(--red); }
+  .fresh { animation: ink 1.2s cubic-bezier(.16, 1, .3, 1); }
+  @keyframes ink { from { color: var(--red); } to { color: inherit; } }
+  @media (prefers-reduced-motion: reduce) { .fresh { animation: none; } .mask { transition: none; } }
+
+  @media (max-width: 760px) {
+    .title-block { grid-template-columns: 1fr 1fr; }
+    .title-block > div:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--ink); }
+    .title-block > div:nth-child(2), .title-block > div:nth-child(4) { border-left: 0; }
+    .pad { background-position: 16px 32px; }
+    .title-block > div:nth-child(2), .title-block > div:nth-child(3) { border-bottom: 1px solid var(--ink); }
+    .sheet { grid-template-columns: 1fr; }
+    .margin { padding: 12px 0 0; margin-bottom: 16px; }
+    .margin::after { top: 0; left: 0; right: auto; width: 40px; height: 2px; bottom: auto; }
+    .finds li { grid-template-columns: 1fr; gap: 4px; }
+    .two { grid-template-columns: minmax(0, 1fr); }
+    .hide-sm { display: none; }
+    .gauges { display: none; } /* the sentence already carries both numbers */
+    .sheet + .sheet::before { left: 0; right: 0; }
+  }
+</style>
+</head>
+<body>
+<main class="pad" id="pad">
+  <p class="empty">Reading your transcripts...</p>
+</main>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const pct = (x) => Math.round((x || 0) * 100) + '%';
+  const num = (x) => Math.round(x || 0).toLocaleString();
+  const money = (x) => '$' + Math.round(x || 0).toLocaleString();
+  const hrs = (m) => (m / 60 >= 10 ? Math.round(m / 60) : (m / 60).toFixed(1)) + 'h';
+  const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let last = null;
+
+  function ramp(v, max) {
+    if (!v) return 'transparent';
+    const q = v / (max || 1);
+    return q > .75 ? 'var(--r4)' : q > .45 ? 'var(--r3)' : q > .2 ? 'var(--r2)' : 'var(--r1)';
+  }
+
+  function masked(name, isPerson) { return isPerson ? `<span class="mask">${esc(name)}</span>` : esc(name); }
+
+  const METRIC_NAME = { medianWords: 'words per message', correction: 'push back', question: 'questions', laugh: 'laughs', late: 'late-night messages', shout: 'all-caps messages', neg: 'tense messages', pos: 'upbeat messages' };
+  // Filled dot = higher than usual, hollow = lower. Red only when it means more tension.
+  function gauge(v, b, metric) {
+    const max = Math.max(v, b) * 1.15 || 1;
+    const x = (n) => 8 + (n / max) * 164;
+    const col = metric === 'neg' && v > b ? 'var(--red)' : 'var(--ink)';
+    const name = METRIC_NAME[metric] || String(metric).replace(/^lang:/, '');
+    return `<svg viewBox="0 0 180 28" role="img" aria-label="${esc(name)}: ${esc(fmtMetric(metric, v))} here, ${esc(fmtMetric(metric, b))} usually">
+      <line x1="8" y1="14" x2="172" y2="14" stroke="var(--ink-faint)" stroke-width="1"/>
+      <line x1="${x(b)}" y1="6" x2="${x(b)}" y2="22" stroke="var(--ink-soft)" stroke-width="1.5"/>
+      <line x1="${x(Math.min(v, b))}" y1="14" x2="${x(Math.max(v, b))}" y2="14" stroke="${col}" stroke-width="2"/>
+      <circle cx="${x(v)}" cy="14" r="4.5" fill="${v > b ? col : 'var(--pad)'}" stroke="${col}" stroke-width="2"/>
+    </svg>`;
+  }
+  function fmtMetric(k, v) { return k === 'medianWords' ? Math.round(v) + ' words' : pct(v); }
+  const narrow = () => window.innerWidth < 760;
+  const shortDate = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+  function titleBlock(m) {
+    const y = m.you, w = m.thisWeek || { now: { messages: 0 }, today: 0, start: m.range.to };
+    return `<header class="title-block">
+      <div><span class="tb-label">Subject</span><h1>How you work with AI</h1><span class="tb-sub">${esc(shortDate(m.range.from))} to ${esc(shortDate(m.range.to))}, ${esc(m.tz)}</span></div>
+      <div><span class="tb-label">Week of ${esc(shortDate(w.start))}</span><span class="tb-value" data-k="week">${num(w.now.messages)}</span><span class="tb-sub" data-k="today">${num(w.today)} today${w.base && w.base.messages ? `, usual ${Math.round(w.base.messages)}` : ''}</span></div>
+      <div><span class="tb-label">Messages you typed</span><span class="tb-value" data-k="prompts">${num(y.prompts)}</span><span class="tb-sub">${num(y.words)} words</span></div>
+      <div><span class="tb-label">Active days</span><span class="tb-value">${y.activeDays}</span><span class="tb-sub">~${num(y.session.hours)}h in sessions</span></div>
+      <div><span class="tb-label">Streak</span><span class="tb-value">${y.streak.current} days</span><span class="tb-sub">longest ${y.streak.longest}</span></div>
+    </header>
+    <div class="controls">
+      <span class="status" id="status" role="status" aria-live="polite"></span>
+      <button class="toggle" id="names" type="button" aria-pressed="${document.body.classList.contains('names')}">${document.body.classList.contains('names') ? 'Hide names' : 'Show names'}</button>
+    </div>`;
+  }
+
+  function sheet(title, margin, plot) {
+    return `<section class="sheet"><h2>${title}</h2><div class="margin">${margin}</div><div class="plot">${plot}</div></section>`;
+  }
+
+  function differ(m) {
+    const d = m.contexts.diffs;
+    if (!d.length) return sheet('Where you differ', `<p class="note">Nothing stands out yet. Comparisons start once a project has 25 of your messages or a person comes up 12 times.</p>`, '');
+    const groups = [['project', 'By project'], ['person', 'By person']];
+    const base = m.words.base;
+    const w = m.thisWeek;
+    const week = w && w.moved.length ? w.moved.slice(0, 3).map((x) => `<p class="note week">${esc(x.text)}</p>`).join('') : '';
+    const margin = `${week}<p class="note">Each line compares one project or person with <b>how you usually write</b>. The tick is your usual; each dot is one difference, in the order the sentence lists them, filled when higher and hollow when lower.</p>
+      <p class="note">Usually you write <b>${base.medianWords} words</b>, push back on <b>${pct(base.correction)}</b> and ask a question in <b>${pct(base.question)}</b> of messages.<span class="n">from ${num(base.n)} messages</span></p>`;
+    const combined = m.contexts.combined || [];
+    const list = groups.map(([k, label]) => {
+      const rows = combined.filter((x) => x.kind === k).slice(0, 8);
+      if (!rows.length) return '';
+      return `<p class="group-label">${label}</p><ul class="finds">${rows.map((x) => {
+        const text = esc(x.text).replace(esc(x.name), masked(x.name, k === 'person'));
+        return `<li><span class="t">${text}</span><span class="gauges">${x.items.map((i) => gauge(i.value, i.base, i.metric)).join('')}</span></li>`;
+      }).join('')}</ul>`;
+    }).join('');
+    return sheet('This week, and where you differ', margin, list);
+  }
+
+  function calendar(m) {
+    const s = m.you.series;
+    if (!s.length) return '';
+    const first = new Date(s[0].day + 'T00:00:00Z');
+    const off = (first.getUTCDay() + 6) % 7;
+    const cols = Math.ceil((s.length + off) / 7);
+    const cell = 14, gap = 3, left = 28, top = 18;
+    const max = Math.max(...s.map((d) => d.prompts));
+    let out = '';
+    let month = '';
+    s.forEach((d, i) => {
+      const k = i + off, c = Math.floor(k / 7), r = k % 7;
+      const x = left + c * (cell + gap), y = top + r * (cell + gap);
+      const isToday = i === s.length - 1;
+      out += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${ramp(d.prompts, max)}" stroke="${isToday ? 'var(--red)' : 'var(--grid-major)'}" stroke-width="${isToday ? 1.5 : 1}"><title>${d.day}: ${d.prompts} messages</title></rect>`;
+      const mo = d.day.slice(0, 7);
+      if (mo !== month && r === 0) { month = mo; out += `<text x="${x}" y="11" class="fig">${new Date(d.day + 'T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' })}</text>`; }
+    });
+    ['M', '', 'W', '', 'F', '', 'S'].forEach((l, r) => { if (l) out += `<text x="0" y="${top + r * (cell + gap) + 11}" class="fig">${l}</text>`; });
+    const w = left + cols * (cell + gap);
+    return `<svg viewBox="0 0 ${w} ${top + 7 * (cell + gap)}" width="${w}" style="max-width:100%;height:auto" role="img" aria-label="Messages per day">${out}</svg>`;
+  }
+
+  function hourGrid(m) {
+    const step = narrow() ? 2 : 1;
+    const g = m.you.hourDow.map((row) => { const out = []; for (let h = 0; h < 24; h += step) out.push(row.slice(h, h + step).reduce((a, b) => a + b, 0)); return out; });
+    const max = Math.max(...g.flat());
+    const cell = 20, left = 36, top = 4;
+    let out = '';
+    g.forEach((row, r) => {
+      out += `<text x="0" y="${top + r * (cell + 2) + 14}" class="fig">${DOW[r]}</text>`;
+      row.forEach((v, i) => { out += `<rect x="${left + i * (cell + 2)}" y="${top + r * (cell + 2)}" width="${cell}" height="${cell}" fill="${ramp(v, max)}" stroke="var(--grid-major)"><title>${DOW[r]} ${i * step}:00, ${v} messages</title></rect>`; });
+    });
+    [0, 6, 12, 18].forEach((h) => { out += `<text x="${left + (h / step) * (cell + 2)}" y="${top + 7 * (cell + 2) + 14}" class="fig">${h === 0 ? '12am' : h === 12 ? '12pm' : h < 12 ? h + 'am' : (h - 12) + 'pm'}</text>`; });
+    const w = left + g[0].length * (cell + 2);
+    return `<svg viewBox="0 0 ${w} ${top + 7 * (cell + 2) + 20}" width="${w}" style="max-width:100%;height:auto" role="img" aria-label="Messages by hour and weekday">${out}</svg>`;
+  }
+
+  function when(m) {
+    const y = m.you;
+    const g = y.hourDow;
+    const byDow = g.map((r) => r.reduce((a, b) => a + b, 0));
+    const byHour = g[0].map((_, h) => g.reduce((a, r) => a + r[h], 0));
+    const busyDow = byDow.indexOf(Math.max(...byDow));
+    const busyHour = byHour.indexOf(Math.max(...byHour));
+    const weekend = (byDow[5] + byDow[6]) / (byDow.reduce((a, b) => a + b, 0) || 1);
+    const fmtH = (h) => (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
+    const margin = `
+      <p class="note">Your busiest day is <b>${DOW[busyDow]}</b> and your busiest hour starts at <b>${fmtH(busyHour)}</b>.</p>
+      <p class="note"><b>${pct(m.words.base.late)}</b> of your messages go out between 10pm and 5am. <b>${pct(weekend)}</b> land on a weekend.</p>
+      <p class="note">A typical session runs <b>${y.session.medianMinutes} minutes</b> and <b>${y.session.medianPrompts} messages</b>.<span class="n">gaps over 30 minutes don't count as time</span></p>`;
+    return sheet('When you work', margin, `${calendar(m)}<div style="height:24px"></div>${hourGrid(m)}`);
+  }
+
+  function weekCols(values, color) {
+    const max = Math.max(...values, 1), w = 6, gap = 2, h = 22;
+    return `<svg viewBox="0 0 ${values.length * (w + gap)} ${h}" width="${values.length * (w + gap)}" height="${h}" aria-hidden="true">
+      <line x1="0" y1="${h - 0.5}" x2="${values.length * (w + gap)}" y2="${h - 0.5}" stroke="var(--ink-faint)"/>
+      ${values.map((v, i) => `<rect x="${i * (w + gap)}" y="${h - (v / max) * (h - 2)}" width="${w}" height="${(v / max) * (h - 2)}" fill="${color}"/>`).join('')}</svg>`;
+  }
+
+  function projects(m) {
+    const real = m.projects.filter((x) => x.prompts >= 3 && !x.day).slice(0, 13);
+    const day = m.projects.find((x) => x.day);
+    const p = day ? real.concat(day) : real;
+    if (!p.length) return '';
+    const total = m.projects.reduce((a, x) => a + x.minutes, 0) || 1;
+    const projTotal = real.reduce((a, x) => a + x.minutes, 0) || 1;
+    const max = Math.max(...p.map((x) => x.minutes), 1);
+    const top = real[0] || p[0];
+    const top3 = real.slice(0, 3).reduce((a, x) => a + x.minutes, 0) / projTotal;
+    const margin = `
+      <p class="note"><b>${esc(top.name)}</b> took <b>${pct(top.minutes / projTotal)}</b> of your project time, about ${hrs(top.minutes)}.</p>
+      <p class="note">Your top three projects cover <b>${pct(top3)}</b> of it.</p>
+      ${day ? `<p class="note">Running your day took another <b>${hrs(day.minutes)}</b>, ${pct(day.minutes / total)} of all your hours.</p>` : ''}
+      <p class="note quiet">Day to day is your OS itself plus sessions from a general folder that name no project.</p>`;
+    const rows = p.map((x) => `<tr${x.day ? ' class="day"' : ''}>
+      <td>${esc(x.name)}</td>
+      <td style="width:38%"><span class="bar" style="width:${(x.minutes / max) * 100}%"></span></td>
+      <td class="num fig">${hrs(x.minutes)}</td><td class="num fig">${num(x.prompts)}</td>
+      <td class="num hide-sm">${weekCols(x.weekly.slice(-12), 'var(--ink)')}</td></tr>`).join('');
+    return sheet('What you work on', margin, `<div class="scroll"><table class="ruled"><thead><tr><th>Project</th><th>Time</th><th class="num">Hours</th><th class="num">Messages</th><th class="num hide-sm">Last 12 weeks</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+  }
+
+  function mood(m) {
+    const t = m.tone;
+    if (!m.mood || !m.mood.scored) {
+      return sheet('How you sound', `<p class="note">Tone isn't set up yet.</p>`, `<p class="empty">Run <code>node tone.js teach</code>, then <code>node tone.js train</code> and <code>node ingest.js --rebuild</code>. A small model labels a sample of your messages once; after that every message is scored on this machine for free.</p>`);
+    }
+    const wk = m.mood.weeks.filter((w) => w.neg + w.flat + w.pos > 0).slice(narrow() ? -8 : -16);
+    const colW = 28, gap = 8, h = 120;
+    let bars = '';
+    wk.forEach((w, i) => {
+      const n = w.neg + w.flat + w.pos, x = i * (colW + gap);
+      const hn = (w.neg / n) * h, hp = (w.pos / n) * h, hf = h - hn - hp;
+      bars += `<g><title>${w.week}: ${pct(w.neg / n)} tense, ${pct(w.pos / n)} upbeat, ${n} messages</title>
+        <rect x="${x}" y="0" width="${colW}" height="${hp}" fill="var(--pos)"/>
+        <rect x="${x}" y="${hp}" width="${colW}" height="${hf}" fill="var(--r1)" stroke="var(--grid-major)"/>
+        <rect x="${x}" y="${hp + hf}" width="${colW}" height="${hn}" fill="url(#hatch)" stroke="var(--red)"/>
+        <text x="${x}" y="${h + 14}" class="fig">${Number(w.start.slice(8))}</text>${i === 0 || w.start.slice(5, 7) !== wk[i - 1].start.slice(5, 7) ? `<text x="${x}" y="${h + 27}" class="fig">${esc(shortDate(w.start).split(' ')[0])}</text>` : ''}</g>`;
+    });
+    const defs = `<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="4" fill="var(--red)"/></pattern></defs>`;
+    const b = m.words.base;
+    const moods = Object.entries(b.moods || {}).sort((a, c) => c[1] - a[1]);
+    const tenseProj = Object.entries(m.projectProfiles).filter(([, p]) => p.n >= 25 && p.neg != null).sort((a, c) => c[1].neg - a[1].neg);
+    const agree = t && t.heldOut ? t.heldOut.polarity.agree : null;
+    const margin = `
+      <p class="note">Most of the time you sound <b>${esc(moods[0] ? moods[0][0] : 'flat')}</b>. <b>${pct(b.neg)}</b> of your messages read tense and <b>${pct(b.pos)}</b> upbeat.<span class="n">${num(m.mood.scored)} messages scored</span></p>
+      ${tenseProj[0] ? `<p class="note">You sound most tense on <b>${esc(tenseProj[0][0])}</b> (${pct(tenseProj[0][1].neg)}) and least on <b>${esc(tenseProj[tenseProj.length - 1][0])}</b> (${pct(tenseProj[tenseProj.length - 1][1].neg)}).</p>` : ''}
+      <p class="note quiet">Tone comes from a local classifier trained on ${t ? num(t.labels) : 'a sample of'} of your messages${agree != null ? `; it matches the labeling model on tense / flat / upbeat ${pct(agree)} of the time` : ''}. Read it as a trend, not a verdict on any single message.</p>`;
+    const mix = moods.map(([k, v]) => `<tr><td>${esc(k)}</td><td style="width:60%"><span class="bar" style="width:${v * 100}%"></span></td><td class="num fig">${pct(v)}</td></tr>`).join('');
+    const tp = tenseProj.slice(0, 8).map(([k, p]) => `<tr><td>${esc(k)}</td><td class="num fig">${pct(p.neg)}</td><td class="num fig">${pct(p.pos)}</td><td class="num fig">${num(p.n)}</td></tr>`).join('');
+    return sheet('How you sound', margin, `
+      <svg viewBox="0 0 ${wk.length * (colW + gap) + 44} ${h + 30}" width="${wk.length * (colW + gap) + 44}" style="max-width:100%;height:auto" role="img" aria-label="Share of tense and upbeat messages per week">${defs}${bars}
+        ${wk.length ? `<text x="${wk.length * (colW + gap)}" y="10" class="fig">upbeat</text><text x="${wk.length * (colW + gap)}" y="${h - 4}" class="fig">tense</text>` : ''}</svg>
+      <p class="legend"><span><i class="sw" style="background:var(--pos)"></i>upbeat, on top</span><span><i class="sw" style="background:var(--r1);outline:1px solid var(--grid-major)"></i>flat</span><span><i class="sw hatch"></i>tense, hatched at the bottom</span><span>one column per week, starting Monday</span></p>
+      <div class="two" style="margin-top:32px">
+        <table class="ruled"><thead><tr><th>Mood mix</th><th></th><th class="num">Share</th></tr></thead><tbody>${mix}</tbody></table>
+        <div class="scroll"><table class="ruled"><thead><tr><th>Project</th><th class="num">Tense</th><th class="num">Upbeat</th><th class="num">Messages</th></tr></thead><tbody>${tp}</tbody></table></div>
+      </div>`);
+  }
+
+  function words(m) {
+    const w = m.words, b = w.base;
+    const phrases = w.bigrams.slice(0, 16).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num fig">${v}</td></tr>`).join('');
+    const single = w.top.slice(0, 16).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num fig">${v}</td></tr>`).join('');
+    const tp = Object.entries(w.timeProfiles).map(([k, p]) => `<tr><td>${esc(k)}</td><td class="num fig">${num(p.n)}</td><td class="num fig">${p.medianWords}</td><td class="num fig">${pct(p.correction)}</td><td class="num fig">${pct(p.question)}</td>${p.neg != null ? `<td class="num fig">${pct(p.neg)}</td>` : ''}</tr>`).join('');
+    const hasTone = Object.values(w.timeProfiles).some((p) => p.neg != null);
+    const parts = w.particles.length ? `<p class="note">Filler words you use: ${w.particles.slice(0, 8).map(([k, v]) => `<b>${esc(k)}</b> ${v}`).join(', ')}.</p>` : '';
+    const margin = `
+      <p class="note">Your typical message is <b>${b.medianWords} words</b>; the average is ${Math.round(b.avgWords)}, pulled up by pasted text.</p>
+      <p class="note">When you push back, you keep it to about <b>${w.correctionMedianWords} words</b>. That happens in ${pct(b.correction)} of your messages.</p>
+      <p class="note"><b>${pct(b.lower)}</b> of your messages are all lowercase. You laugh in ${pct(b.laugh)} of them.</p>${parts}`;
+    return sheet('The words you use', margin, `
+      <div class="two"><table class="ruled"><thead><tr><th>Phrases</th><th class="num">Times</th></tr></thead><tbody>${phrases}</tbody></table>
+      <table class="ruled"><thead><tr><th>Words</th><th class="num">Times</th></tr></thead><tbody>${single}</tbody></table></div>
+      <div class="scroll" style="margin-top:32px"><table class="ruled"><thead><tr><th>Time of day</th><th class="num">Messages</th><th class="num">Typical words</th><th class="num">Push back</th><th class="num">Questions</th>${hasTone ? '<th class="num">Tense</th>' : ''}</tr></thead><tbody>${tp}</tbody></table></div>`);
+  }
+
+  function people(m) {
+    const p = m.people.filter((x) => x.mentions >= 3).slice(0, 16);
+    if (!p.length) return sheet('Who comes up', `<p class="note">No one from your people file comes up yet.</p>`, `<p class="empty">Names come from <code>People/people.md</code> and <code>usage.aliases</code> in your config.</p>`);
+    const hasTone = p.some((x) => x.profile.neg != null);
+    const rows = p.map((x) => `<tr><td>${masked(x.name, true)}</td><td class="num fig">${x.mentions}</td>
+      <td class="num hide-sm">${weekCols(x.weekly.slice(-12), 'var(--ink)')}</td>
+      ${hasTone ? `<td class="num fig">${x.profile.neg != null ? pct(x.profile.neg) : ''}</td>` : ''}<td class="num fig">${x.profile.medianWords}</td>
+      <td class="hide-sm">${x.projects.map(([k]) => esc(k)).join(', ')}</td></tr>`).join('');
+    const margin = `<p class="note"><b>${masked(p[0].name, true)}</b> comes up most, in ${p[0].mentions} of your messages.</p>
+      <p class="note quiet">Names are hidden until you press Show names, so this page is safe to share on screen. Everything here stays on this machine.</p>`;
+    return sheet('Who comes up', margin, `<div class="scroll"><table class="ruled"><thead><tr><th>Person</th><th class="num">Mentions</th><th class="num hide-sm">Last 12 weeks</th>${hasTone ? '<th class="num">Tense</th>' : ''}<th class="num">Typical words</th><th class="hide-sm">Mostly on</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+  }
+
+  function machine(m) {
+    const k = m.machine;
+    const days = k.costDaily.slice(-60);
+    const max = Math.max(...days.map((d) => d.you + d.os), 1);
+    const colW = 8, gap = 4, h = 110;
+    const cols = days.map((d, i) => {
+      const x = i * (colW + gap), hy = (d.you / max) * h, ho = (d.os / max) * h;
+      return `<g><title>${d.day}: you ${money(d.you)}, OS ${money(d.os)}</title><rect x="${x}" y="${h - hy}" width="${colW}" height="${hy}" fill="var(--ink)"/><rect x="${x}" y="${h - hy - ho}" width="${colW}" height="${Math.max(0, ho - 1.5)}" fill="var(--blue)"/></g>`;
+    }).join('');
+    const models = k.models.slice(0, 8).map((x) => `<tr><td>${esc(x.model)}</td><td class="num fig">${num(x.calls)}</td><td class="num fig">${x.out >= 1e6 ? (x.out / 1e6).toFixed(1) + 'M' : Math.round(x.out / 1e3) + 'K'}</td><td class="num fig">${x.priced ? money(x.cost) : 'n/a'}</td></tr>`).join('');
+    const toolsMax = Math.max(...k.tools.you.concat(k.tools.os).map((t) => t[1]), 1);
+    const tools = (list, cls) => list.slice(0, 10).map(([n, v]) => `<tr><td>${esc(n.replace(/^mcp__[^_]+__/, ''))}</td><td class="hide-sm" style="width:45%"><span class="bar ${cls}" style="width:${(v / toolsMax) * 100}%"></span></td><td class="num fig">${num(v)}</td></tr>`).join('');
+    const total = k.layers.you.cost + k.layers.os.cost || 1;
+    const margin = `
+      <p class="note">At API prices your sessions would have cost <b>${money(k.layers.you.cost)}</b> and your automation <b>${money(k.layers.os.cost)}</b>.<span class="n">API-equivalent; a subscription is not billed these amounts</span></p>
+      <p class="note">Your OS ran <b>${num(k.osSessions)} sessions</b> on its own, <b>${pct(k.layers.os.cost / total)}</b> of the total.</p>
+      ${k.unpricedTokens ? `<p class="note quiet">${num(k.unpricedTokens)} tokens are on models with no price set; add them under <code>usage.prices</code>.</p>` : ''}`;
+    return sheet('What it costs', margin, `
+      <svg viewBox="0 0 ${days.length * (colW + gap)} ${h + 4}" width="${days.length * (colW + gap)}" style="max-width:100%;height:auto" role="img" aria-label="API-equivalent cost per day, you and OS">
+        <line x1="0" y1="${h + 0.5}" x2="${days.length * (colW + gap)}" y2="${h + 0.5}" stroke="var(--ink-faint)"/>${cols}</svg>
+      <p class="legend"><span><i class="sw" style="background:var(--ink)"></i>your sessions</span><span><i class="sw" style="background:var(--blue)"></i>your OS</span><span>last ${days.length} days, peak ${money(max)}</span></p>
+      <div class="scroll" style="margin-top:32px"><table class="ruled"><thead><tr><th>Model</th><th class="num">Calls</th><th class="num">Output</th><th class="num">API-equivalent</th></tr></thead><tbody>${models}</tbody></table></div>
+      <div class="two" style="margin-top:32px">
+        <div class="scroll"><table class="ruled"><thead><tr><th>Tools in your sessions</th><th class="hide-sm"></th><th class="num">Calls</th></tr></thead><tbody>${tools(k.tools.you, '')}</tbody></table></div>
+        <div class="scroll"><table class="ruled"><thead><tr><th>Tools your OS used</th><th class="hide-sm"></th><th class="num">Calls</th></tr></thead><tbody>${tools(k.tools.os, 'os')}</tbody></table></div>
+      </div>`);
+  }
+
+  function render(m, force) {
+    if (!m || !m.you || !m.you.prompts) {
+      $('#pad').innerHTML = `<p class="empty">No messages found yet. This page reads Claude Code transcripts from <code>~/.claude/projects</code> and Codex sessions from <code>~/.codex/sessions</code>. Use either tool, then reload.</p>`;
+      return;
+    }
+    const status = () => { $('#status').innerHTML = window.__SNAPSHOT__ ? `Snapshot from ${new Date(m.generated).toLocaleString()}` : `<span class="dot" aria-hidden="true"></span>Live, updated ${new Date(m.generated).toLocaleTimeString()}`; };
+    // Live updates only redraw when something you can see changed; focus stays where it was.
+    const sig = (x) => JSON.stringify([x.you.prompts, x.you.words, x.machine.layers, x.mood && x.mood.scored, narrow()]);
+    if (last && force !== true && sig(last) === sig(m)) { last = m; status(); return; }
+    const before = last && last.you.prompts;
+    const focusId = document.activeElement && document.activeElement.id;
+    $('#pad').innerHTML = titleBlock(m) + differ(m) + when(m) + projects(m) + mood(m) + words(m) + people(m) + machine(m);
+    if (before != null && before !== m.you.prompts) document.querySelectorAll('[data-k]').forEach((n) => n.classList.add('fresh'));
+    last = m;
+    status();
+    $('#names').addEventListener('click', (e) => {
+      const on = document.body.classList.toggle('names');
+      e.currentTarget.setAttribute('aria-pressed', String(on));
+      e.currentTarget.textContent = on ? 'Hide names' : 'Show names';
+    });
+    if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus({ preventScroll: true });
+  }
+
+  async function load() {
+    try {
+      const m = window.__SNAPSHOT__ || await (await fetch('/api/metrics', { cache: 'no-store' })).json();
+      render(m);
+    } catch (e) {
+      $('#pad').innerHTML = `<p class="empty">Couldn't read the metrics (${esc(e.message)}). Is <code>node serve.js</code> still running?</p>`;
+    }
+  }
+
+  load();
+  if (!window.__SNAPSHOT__ && window.EventSource) new EventSource('/api/stream').addEventListener('update', load);
+  let rt;
+  let wasNarrow = narrow();
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (last && narrow() !== wasNarrow) { wasNarrow = narrow(); render(last, true); } }, 200); });
+})();
+</script>
+</body>
+</html>
