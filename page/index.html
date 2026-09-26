@@ -142,9 +142,10 @@ FIRST VIEWPORT: the page name and live status, then the week sentence: messages 
   .mask { filter: blur(6px); user-select: none; transition: filter 180ms cubic-bezier(.2, .8, .2, 1); }
   body.names .mask { filter: none; user-select: auto; }
 
-  dialog.share { border: 0; border-radius: 28px; background: var(--panel); color: var(--ink); padding: 24px; max-width: min(520px, 94vw); }
+  dialog.share { border: 0; border-radius: 28px; background: var(--panel); color: var(--ink); padding: 24px; width: min(440px, 94vw); max-height: 96vh; overflow-y: auto; }
   dialog.share::backdrop { background: rgba(17, 17, 16, .5); }
-  dialog.share img { width: 100%; height: auto; display: block; border-radius: 16px; }
+  dialog.share img { display: block; margin: 0 auto; width: auto; height: auto; max-width: 100%; max-height: min(64vh, 640px); aspect-ratio: 9 / 16; border-radius: 16px; }
+  dialog.share .nav { justify-content: space-between; }
   dialog.share .row { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; }
   dialog.share label { font-size: 14px; }
   dialog.share h2 { font-size: 17px; margin: 0 0 16px; font-weight: 600; }
@@ -535,89 +536,201 @@ FIRST VIEWPORT: the page name and live status, then the week sentence: messages 
     return panel(m, 'cost', 'What it costs', { big, sub, glance, more });
   }
 
-  // The share card: drawn here, saved here, nothing uploaded. Names are swapped out unless you keep them.
-  function shareCard(m, keepNames) {
-    const W = 1080, H = 1350, c = document.createElement('canvas');
-    c.width = W; c.height = H;
+  // The share story: five slides drawn here, saved here, nothing uploaded. Names are swapped out unless you keep them.
+  const SW = 1080, SH = 1920, PX = 96, MW = SW - PX * 2;
+  const REPO = 'github.com/jarrheyd/inkprint';
+  const sfont = (w, px) => `${w} ${px}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+  const SLIDE = {
+    red: { bg: '#C4462F', fg: '#FFFFFF', dim: 'rgba(255, 255, 255, .45)' },
+    cobalt: { bg: '#2446C8', fg: '#FFFFFF', dim: 'rgba(255, 255, 255, .42)' },
+    green: { bg: '#1F5A3E', fg: '#FFFFFF', dim: 'rgba(255, 255, 255, .4)' },
+    night: { bg: '#151514', fg: '#FFFFFF', dim: 'rgba(255, 255, 255, .3)', hot: '#E0735F' },
+    cream: { bg: '#F1E9D8', fg: '#151514', dim: 'rgba(21, 21, 20, .35)' },
+  };
+
+  function slideBase(theme, dateLine) {
+    const c = document.createElement('canvas');
+    c.width = SW; c.height = SH;
     const g = c.getContext('2d');
-    // The card always uses the light colors, whatever theme the page is in.
-    const GROUND = '#FAFAF9', PANEL = '#EFEFEE', INK = '#111110', SOFT = '#62625E';
-    g.fillStyle = GROUND; g.fillRect(0, 0, W, H);
-    g.fillStyle = PANEL; g.beginPath(); g.roundRect(48, 48, W - 96, H - 96, 56); g.fill();
-    const font = (px) => `600 ${px}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-    const X = 120, MAXW = W - 240;
-    // Writes a sentence word by word: words with a number in ink, the rest gray, wrapping at MAXW.
-    const rich = (t, y, px, lead) => {
-      g.font = font(px);
-      const space = g.measureText(' ').width;
-      let x = X;
-      for (const wd of String(t).split(' ')) {
-        const wdW = g.measureText(wd).width;
-        if (x > X && x + wdW > X + MAXW) { x = X; y += px * lead; }
-        // Only the number itself goes in ink; brackets and commas around it stay gray.
-        const [, pre, core, post] = wd.match(/^(\W*)(.*?)([^\w%$]*)$/);
-        let cx = x;
-        for (const [part, col] of [[pre, SOFT], [core, /\d/.test(core) ? INK : SOFT], [post, SOFT]]) {
-          if (!part) continue;
-          g.fillStyle = col; g.fillText(part, cx, y); cx += g.measureText(part).width;
-        }
-        x += wdW + space;
-      }
-      return y + px * lead;
-    };
-    const w = m.thisWeek || { now: {}, base: {} };
-    const alias = new Map(); let n = 0;
+    g.fillStyle = theme.bg; g.fillRect(0, 0, SW, SH);
+    g.globalAlpha = 0.8; g.fillStyle = theme.fg; g.font = sfont(600, 38);
+    g.fillText(dateLine, PX, 160);
+    g.fillText(REPO, PX, SH - 110);
+    g.globalAlpha = 1;
+    return { c, g };
+  }
+  // Wraps words at the column width and returns the next baseline.
+  function swrap(g, text, y, px, weight, color, lead) {
+    g.font = sfont(weight, px); g.fillStyle = color;
+    let line = '';
+    for (const wd of String(text).split(' ')) {
+      const test = line ? line + ' ' + wd : wd;
+      if (line && g.measureText(test).width > MW) { g.fillText(line, PX, y); y += px * (lead || 1.15); line = wd; } else line = test;
+    }
+    g.fillText(line, PX, y);
+    return y + px * (lead || 1.15);
+  }
+  // The headline number, as large as the column allows.
+  function shuge(g, text, y, color, max) {
+    let px = max || 420;
+    g.font = sfont(800, px);
+    while (g.measureText(text).width > MW && px > 100) { px -= 10; g.font = sfont(800, px); }
+    g.fillStyle = color; g.fillText(text, PX - px * 0.04, y);
+    return y + (/[gjpqy]/.test(text) ? px * 0.22 : 0); // leave room under a descender
+
+  }
+  function scols(g, values, top, h, pick, labels, theme) {
+    const n = values.length, gap = n > 12 ? 10 : 18, w = (MW - gap * (n - 1)) / n;
+    const max = Math.max(...values) || 1;
+    values.forEach((v, i) => {
+      const bh = Math.max(8, (v / max) * h);
+      g.fillStyle = pick(v, i); g.beginPath(); g.roundRect(PX + i * (w + gap), top + h - bh, w, bh, Math.min(10, w / 3)); g.fill();
+    });
+    g.fillStyle = theme.fg; g.globalAlpha = 0.7; g.font = sfont(600, 30);
+    for (const [i, t] of labels) {
+      const tw = g.measureText(t).width;
+      const x = Math.min(PX + MW - tw, Math.max(PX, PX + i * (w + gap) + w / 2 - tw / 2)); // centered under its column, kept inside the edges
+      g.fillText(t, x, top + h + 50);
+    }
+    g.globalAlpha = 1;
+  }
+  function sbars(g, rows, top, theme) {
+    const max = Math.max(...rows.map((r) => r.v), 1);
+    rows.forEach((r, i) => {
+      const y = top + i * 120;
+      g.fillStyle = theme.fg; g.font = sfont(600, 40); g.fillText(r.label, PX, y);
+      g.textAlign = 'right'; g.fillText(r.text, PX + MW, y); g.textAlign = 'left';
+      g.fillStyle = theme.dim; g.beginPath(); g.roundRect(PX, y + 24, MW, 22, 11); g.fill();
+      g.fillStyle = theme.fg; g.beginPath(); g.roundRect(PX, y + 24, Math.max(22, (r.v / max) * MW), 22, 11); g.fill();
+    });
+  }
+
+  function storySlides(m, keepNames) {
+    const w = m.thisWeek, y = m.you;
+    const dateLine = w ? `My week with AI, from ${shortDate(w.start)}` : 'My time with AI';
+    const alias = new Map();
     const hide = (name) => {
       if (keepNames) return name;
-      if (!alias.has(name)) alias.set(name, 'Project ' + String.fromCharCode(65 + n++));
+      if (!alias.has(name)) alias.set(name, 'Project ' + String.fromCharCode(65 + alias.size));
       return alias.get(name);
     };
-    g.font = font(34); g.fillStyle = SOFT; g.fillText(`My week with AI, from ${shortDate(w.start || m.range.to)}`, X, 190);
-    const usual = w.base && w.base.messages ? Math.round(w.base.messages) : 0;
-    let y = rich(`${num(w.now.messages || 0)} messages this week${usual ? `, against ${num(usual)} in a usual week.` : '.'}`, 300, 84, 1.08);
-    y = rich(`A ${m.you.streak.current} day streak, and ${m.words.base.medianWords} words in a typical message.`, y + 40, 44, 1.2);
-    // The card speaks as you: the page's "you" lines turned into "I".
-    const mine = (t) => String(t).replace(/\bYou're\b/g, "I'm").replace(/\byou're\b/g, "I'm").replace(/\b[Yy]ou\b/g, 'I').replace(/\byour\b/g, 'my').replace(/\bYour\b/g, 'My');
-    // A mix: one thing that moved this week, one project, one person, then your top rule.
-    const tells = [];
-    for (const x of (w.moved || []).slice(0, 1)) tells.push(mine(x.text));
-    const comb = m.contexts.combined || [];
-    for (const d of comb.filter((x) => x.kind === 'project').slice(0, 1)) tells.push(mine(d.text.split(d.name).join(hide(d.name))));
-    // For people, message length mostly tracks pasted text, so pick a difference in how you talk instead.
-    const person = comb.find((x) => x.kind === 'person' && x.items.some((i) => i.metric !== 'medianWords'));
-    if (person) {
-      const i = person.items.find((x) => x.metric !== 'medianWords');
-      if (i && i.phrase) tells.push(`${keepNames ? `When ${person.name} comes up, I` : 'When a certain teammate comes up, I'} ${i.phrase}.`);
+    const out = [];
+
+    // 1. Messages this week.
+    {
+      const t = SLIDE.red, { c, g } = slideBase(t, dateLine);
+      const count = w ? w.now.messages : y.prompts;
+      const usual = w && w.base && w.base.messages ? Math.round(w.base.messages) : 0;
+      shuge(g, num(count), 700, t.fg);
+      let yy = swrap(g, w ? 'messages to my AI this week' : `messages to my AI over ${y.activeDays} days`, 820, 64, 700, t.fg);
+      if (usual) swrap(g, `A usual week is ${num(usual)}.`, yy + 10, 48, 600, t.fg);
+      if (w) {
+        const i0 = y.series.findIndex((d) => d.day === w.start);
+        const days = DOW.map((_, i) => { const d = i0 >= 0 ? y.series[i0 + i] : null; return d ? d.prompts : 0; });
+        const today = i0 >= 0 ? y.series.length - 1 - i0 : -1;
+        scols(g, days, 1260, 340, (v, i) => (i === today ? t.fg : t.dim), DOW.map((d, i) => [i, d.slice(0, 1)]), t);
+      }
+      out.push({ c, lines: [`${num(count)} messages to my AI${w ? ' this week' : ''}.`, usual ? `A usual week is ${num(usual)}.` : ''] });
     }
-    if (m.voice && m.voice.rules && m.voice.rules[0]) tells.push(`My most repeated note to my AI: "${m.voice.rules[0].label}", ${m.voice.rules[0].count} times.`);
-    y += 40;
-    for (const t of tells.filter(Boolean).slice(0, 4)) { if (y > H - 200) break; y = rich(t, y, 34, 1.3) + 20; }
-    g.font = font(26); g.fillStyle = SOFT; g.fillText('made with inkprint, on my machine', X, H - 120);
-    c.lines = [`${num(w.now.messages || 0)} messages this week.`].concat(tells.slice(0, 4));
-    return c;
+
+    // 2. When.
+    {
+      const t = SLIDE.cobalt, { c, g } = slideBase(t, dateLine);
+      const hd = y.hourDow;
+      const byDow = hd.map((r) => r.reduce((a, b) => a + b, 0));
+      const byHour = hd[0].map((_, h) => hd.reduce((a, r) => a + r[h], 0));
+      const busyHour = byHour.indexOf(Math.max(...byHour)), busyDow = byDow.indexOf(Math.max(...byDow));
+      const below = shuge(g, fmtH(busyHour), 700, t.fg);
+      swrap(g, `is my busiest hour, and ${DAY[busyDow]} my busiest day`, below + 120, 64, 700, t.fg);
+      scols(g, byHour, 1260, 340, (v, i) => (i === busyHour ? t.fg : t.dim), [[0, '12am'], [6, '6am'], [12, '12pm'], [18, '6pm'], [23, '11pm']], t);
+      out.push({ c, lines: [`${fmtH(busyHour)} is my busiest hour, and ${DAY[busyDow]} my busiest day.`] });
+    }
+
+    // 3. Projects.
+    const real = m.projects.filter((x) => x.prompts >= 3 && !x.day);
+    if (real.length) {
+      const t = SLIDE.green, { c, g } = slideBase(t, dateLine);
+      const total = real.reduce((a, x) => a + x.minutes, 0) || 1;
+      const top = real[0];
+      shuge(g, pct(top.minutes / total), 700, t.fg);
+      swrap(g, `of my project time went to ${hide(top.name)}`, 820, 64, 700, t.fg);
+      sbars(g, real.slice(0, 5).map((x) => ({ label: hide(x.name), v: x.minutes, text: hrs(x.minutes) })), 1120, t);
+      out.push({ c, lines: [`${pct(top.minutes / total)} of my project time went to ${hide(top.name)}.`] });
+    }
+
+    // 4. How I sound.
+    if (m.mood && m.mood.scored) {
+      const t = SLIDE.night, { c, g } = slideBase(t, dateLine);
+      const b = m.words.base;
+      const now = w && w.now.neg != null ? w.now.neg : b.neg;
+      const usual = (w && w.base && w.base.neg) || b.neg;
+      const mood = Object.entries(b.moods || {}).sort((a, x) => x[1] - a[1])[0];
+      shuge(g, pct(now), 700, t.hot);
+      let yy = swrap(g, `of my messages read tense${w ? ' this week' : ''}, against ${pct(usual)} usually`, 820, 64, 700, t.fg);
+      if (mood) swrap(g, `Most of the time I sound ${mood[0]}.`, yy + 10, 48, 600, t.fg);
+      const wk = m.mood.weeks.filter((x) => x.neg + x.flat + x.pos > 0).slice(-12);
+      const share = wk.map((x) => x.neg / (x.neg + x.flat + x.pos));
+      if (wk.length > 1) scols(g, share, 1260, 340, (v) => (v > usual * 1.1 ? t.hot : t.dim), [[0, shortDate(wk[0].start)], [wk.length - 1, 'this week']], t);
+      out.push({ c, lines: [`${pct(now)} of my messages read tense, against ${pct(usual)} usually.`, mood ? `Most of the time I sound ${mood[0]}.` : ''] });
+    }
+
+    // 5. What I keep telling my AI.
+    {
+      const t = SLIDE.cream, { c, g } = slideBase(t, dateLine);
+      const r = m.voice && m.voice.rules && m.voice.rules[0];
+      const words = m.words.base.medianWords;
+      let yy;
+      if (r) {
+        yy = swrap(g, `"${r.label}"`, 520, 150, 800, t.fg, 1.02);
+        yy = swrap(g, `is what I tell my AI most, ${r.count} times so far`, yy + 30, 64, 700, t.fg);
+      } else yy = 600;
+      shuge(g, String(words), Math.max(yy + 420, 1380), t.fg, 360);
+      swrap(g, 'words in my typical message', Math.max(yy + 520, 1480), 64, 700, t.fg);
+      out.push({ c, lines: [r ? `"${r.label}" is what I tell my AI most, ${r.count} times.` : '', `${words} words in my typical message.`] });
+    }
+    return out.map((s) => ({ canvas: s.c, alt: s.lines.filter(Boolean).join(' ') }));
   }
 
   function openShare(m) {
     let d = document.getElementById('share-dialog');
     if (!d) {
       d = document.createElement('dialog'); d.id = 'share-dialog'; d.className = 'share'; d.setAttribute('aria-labelledby', 'share-title');
-      d.innerHTML = `<h2 id="share-title">Your week as an image</h2><img alt="Your week with AI, as an image" width="1080" height="1350" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><div class="row"><label><input type="checkbox" id="share-names"> Show real project and people names</label>
-        <span class="ctl"><button class="pill" id="share-close" type="button">Close</button><a class="pill" id="share-save" download="my-week-with-ai.png">Save image</a></span></div>`;
+      d.innerHTML = `<h2 id="share-title">Your week as a story</h2>
+        <img alt="" width="1080" height="1920" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+        <div class="row nav"><button class="pill" id="s-prev" type="button">Back</button><span class="status" id="s-count" aria-live="polite"></span><button class="pill" id="s-next" type="button">Next</button></div>
+        <div class="row"><label><input type="checkbox" id="share-names"> Show real project names</label></div>
+        <div class="row"><button class="pill" id="share-close" type="button">Close</button><span class="ctl"><a class="pill" id="share-save">Save this one</a><button class="pill" id="share-all" type="button">Save all</button></span></div>`;
       document.body.appendChild(d);
+      const step = (n) => { d._i = Math.min(d._slides.length - 1, Math.max(0, d._i + n)); showSlide(d); };
+      d.querySelector('#s-prev').addEventListener('click', () => step(-1));
+      d.querySelector('#s-next').addEventListener('click', () => step(1));
+      d.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); });
       d.querySelector('#share-close').addEventListener('click', () => d.close());
       d.querySelector('#share-names').addEventListener('change', () => drawShare(d));
+      d.querySelector('#share-all').addEventListener('click', () => d._slides.forEach((s, i) => setTimeout(() => {
+        const a = document.createElement('a'); a.href = s.url; a.download = `my-week-with-ai-${i + 1}.png`; a.click();
+      }, i * 250)));
       d.addEventListener('close', () => { if ($('#share')) $('#share').focus(); });
     }
-    d._m = m; // the toggle always redraws the latest numbers, not the ones from the first open
+    d._m = m; // the names toggle always redraws the latest numbers, not the ones from the first open
+    d._i = 0;
     drawShare(d);
     d.showModal();
   }
   function drawShare(d) {
-    const c = shareCard(d._m, d.querySelector('#share-names').checked);
-    const url = c.toDataURL('image/png');
+    d._slides = storySlides(d._m, d.querySelector('#share-names').checked).map((s) => ({ url: s.canvas.toDataURL('image/png'), alt: s.alt }));
+    d._i = Math.min(d._i || 0, d._slides.length - 1);
+    showSlide(d);
+  }
+  function showSlide(d) {
+    const s = d._slides[d._i];
     const img = d.querySelector('img');
-    img.src = url; img.alt = c.lines.join(' ');
-    d.querySelector('#share-save').href = url;
+    img.src = s.url; img.alt = s.alt;
+    d.querySelector('#s-count').textContent = `${d._i + 1} of ${d._slides.length}`;
+    d.querySelector('#s-prev').disabled = d._i === 0;
+    d.querySelector('#s-next').disabled = d._i === d._slides.length - 1;
+    const save = d.querySelector('#share-save');
+    save.href = s.url; save.download = `my-week-with-ai-${d._i + 1}.png`;
   }
 
   function render(m, force) {
