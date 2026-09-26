@@ -135,7 +135,7 @@ test('setup: hooks added once, removed cleanly, settings byte-identical after un
   const settings = path.join(tmp, 'claude', 'settings.json');
   const original = JSON.stringify({ model: 'opus', hooks: { PreToolUse: [{ matcher: 'Write', hooks: [{ type: 'command', command: 'echo mine' }] }] } }, null, 2) + '\n';
   fs.writeFileSync(settings, original);
-  const e = { INKPRINT_CLAUDE_SETTINGS: settings, INKPRINT_CODEX_HOOKS: path.join(tmp, 'codex', 'hooks.json'), INKPRINT_LAUNCH_DIR: path.join(tmp, 'launch') };
+  const e = { INKPRINT_CLAUDE_SETTINGS: settings, INKPRINT_CODEX_HOOKS: path.join(tmp, 'codex', 'hooks.json'), INKPRINT_LAUNCH_DIR: path.join(tmp, 'launch'), INKPRINT_APP: path.join(tmp, 'app') };
   withEnv(e, () => {
     fresh();
     const setup = require(path.join(ROOT, 'lib', 'setup'));
@@ -147,12 +147,12 @@ test('setup: hooks added once, removed cleanly, settings byte-identical after un
     const s = JSON.parse(fs.readFileSync(settings, 'utf8'));
     assert.strictEqual(s.hooks.PreToolUse.length, 2, 'installing twice adds one entry');
     assert.match(s.hooks.PreToolUse[1].matcher, /create_draft/);
-    assert.ok(fs.existsSync(path.join(data, 'app', 'bin', 'inkprint.js')), 'the app is copied somewhere stable');
+    assert.ok(fs.existsSync(path.join(tmp, 'app', 'bin', 'inkprint.js')), 'the app is copied somewhere stable, outside the data folder');
     assert.ok(fs.existsSync(path.join(tmp, 'launch', setup.LABEL + '.plist')));
     out = setup.uninstall(data);
     assert.strictEqual(fs.readFileSync(settings, 'utf8'), original, 'your settings come back exactly as they were');
     assert.ok(!fs.existsSync(path.join(tmp, 'codex', 'hooks.json')) || !/inkprint/.test(fs.readFileSync(path.join(tmp, 'codex', 'hooks.json'), 'utf8')));
     assert.ok(!fs.existsSync(path.join(tmp, 'launch', setup.LABEL + '.plist')));
-    assert.ok(!fs.existsSync(path.join(data, 'app')));
+    assert.ok(!fs.existsSync(path.join(tmp, 'app')));
   });
 });
