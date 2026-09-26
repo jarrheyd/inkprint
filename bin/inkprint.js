@@ -4,7 +4,7 @@
  * inkprint: how you work with AI, read from the transcripts already on your
  * machine, and a check that keeps drafts sounding like you.
  *
- *   npx inkprint              set up (background job + voice check), read everything, open the page
+ *   npx github:jarrheyd/inkprint              set up (background job + voice check), read everything, open the page
  *                             flags: --no-open, --no-serve, --no-hooks
  *   inkprint open             open the live page
  *   inkprint report           short summary in the terminal
@@ -57,7 +57,7 @@ function setup() {
   const m = lib('usage/report').build();
   console.log(`inkprint: ${m.you.prompts} of your messages across ${m.you.activeDays} days, ${v.cards.length} voice card${v.cards.length === 1 ? '' : 's'}, in ${((Date.now() - t0) / 1000).toFixed(0)}s.`);
   console.log(`inkprint: nightly refresh ${out.nightly ? 'scheduled' : 'not scheduled (macOS only for now)'}; voice check ${[out.claude === 'added' && 'on in Claude Code', out.codex === 'added' && 'on in Codex'].filter(Boolean).join(', ') || 'not installed'}.`);
-  console.log(`inkprint: everything stays in ${c.dir}. Undo it all with: npx inkprint uninstall`);
+  console.log(`inkprint: everything stays in ${c.dir}. Undo it all with: npx github:jarrheyd/inkprint uninstall`);
   if (!has('--no-serve')) serve(!has('--no-open'));
 }
 

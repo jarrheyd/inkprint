@@ -311,7 +311,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   function mood(m) {
     const t = m.tone;
     if (!m.mood || !m.mood.scored) {
-      return sheet('How you sound', `<p class="note">Tone isn't set up yet.</p>`, `<p class="empty">The mood model that ships with inkprint is missing from this install. Run <code>npx inkprint</code> again to put it back.</p>`);
+      return sheet('How you sound', `<p class="note">Tone isn't set up yet.</p>`, `<p class="empty">The mood model that ships with inkprint is missing from this install. Run <code>npx github:jarrheyd/inkprint</code> again to put it back.</p>`);
     }
     const wk = m.mood.weeks.filter((w) => w.neg + w.flat + w.pos > 0).slice(narrow() ? -8 : -16);
     const colW = 28, gap = 8, h = 120;

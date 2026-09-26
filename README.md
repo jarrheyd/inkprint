@@ -11,7 +11,7 @@ I built this because I spend most of my day in Claude Code and Codex and had no 
 ## Install
 
 ```bash
-npx inkprint
+npx github:jarrheyd/inkprint
 ```
 
 That's the whole setup. It reads your transcripts (under a minute the first time, only new lines after that), schedules a nightly refresh, adds the voice check to Claude Code and Codex, and opens the page. Run it again any time to reopen the page.
@@ -28,8 +28,8 @@ Then `/inkprint` opens the page. Pick one route; the plugin brings its own hook.
 Undo everything:
 
 ```bash
-npx inkprint uninstall          # keeps your data
-npx inkprint uninstall --data   # removes it too
+npx github:jarrheyd/inkprint uninstall          # keeps your data
+npx github:jarrheyd/inkprint uninstall --data   # removes it too
 ```
 
 ## Where your voice comes from

@@ -6,7 +6,7 @@ description: Before showing the user any message you drafted for them to send (c
 The user has voice cards: measured from their own sent messages, per channel and per person. Draft tools are already checked by a hook. Drafts you show in the conversation are not, so check them yourself:
 
 ```bash
-npx --yes inkprint check --channel <whatsapp|telegram|discord|email|gchat|teams|slack> --to "<recipient>" "<the draft>"
+npx --yes github:jarrheyd/inkprint check --channel <whatsapp|telegram|discord|email|gchat|teams|slack> --to "<recipient>" "<the draft>"
 ```
 
 - Exit 0: it fits. Show the draft.
