@@ -1,0 +1,14 @@
+{
+  "name": "inkprint",
+  "description": "inkprint: see how you work with AI, and keep drafts sounding like you.",
+  "owner": {
+    "name": "Jarrhey De la Pena"
+  },
+  "plugins": [
+    {
+      "name": "inkprint",
+      "source": "./",
+      "description": "See how you work with AI, and stop drafts that don't sound like you."
+    }
+  ]
+}

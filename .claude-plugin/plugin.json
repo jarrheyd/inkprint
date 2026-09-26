@@ -1,0 +1,11 @@
+{
+  "name": "inkprint",
+  "version": "0.1.0",
+  "description": "See how you work with AI, from the transcripts already on your machine, and stop drafts that don't sound like you.",
+  "author": { "name": "Jarrhey De la Pena" },
+  "homepage": "https://github.com/jarrheyd/inkprint",
+  "license": "FSL-1.1-MIT",
+  "hooks": "./hooks/hooks.json",
+  "commands": ["./commands/"],
+  "skills": ["./skills/"]
+}

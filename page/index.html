@@ -105,6 +105,13 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   .mask { filter: blur(5px); user-select: none; transition: filter 180ms cubic-bezier(.2, .8, .2, 1); }
   body.names .mask { filter: none; user-select: auto; }
   .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
+  .ctl { display: flex; gap: 8px; }
+  button.toggle[disabled] { opacity: .55; cursor: default; }
+  dialog.share { border: 1.5px solid var(--ink); background: var(--pad); color: var(--ink); padding: 16px; max-width: min(560px, 94vw); }
+  dialog.share::backdrop { background: rgba(14, 24, 16, .55); }
+  dialog.share img { width: 100%; height: auto; display: block; border: 1px solid var(--grid-major); }
+  dialog.share .row { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  dialog.share label { font-size: 13px; }
   .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); margin: 8px 0 0; }
   .sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
   .sw.hatch { background: repeating-linear-gradient(45deg, var(--red) 0 2px, transparent 2px 4px); outline: 1px solid var(--red); }
@@ -147,7 +154,9 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   function ramp(v, max) {
     if (!v) return 'transparent';
     const q = v / (max || 1);
-    return q > .75 ? 'var(--r4)' : q > .45 ? 'var(--r3)' : q > .2 ? 'var(--r2)' : 'var(--r1)';
+    const steps = [[0.75, 'var(--r4)'], [0.45, 'var(--r3)'], [0.2, 'var(--r2)']];
+    const hit = steps.find(([min]) => q > min);
+    return hit ? hit[1] : 'var(--r1)';
   }
 
   function masked(name, isPerson) { return isPerson ? `<span class="mask">${esc(name)}</span>` : esc(name); }
@@ -181,7 +190,10 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     </header>
     <div class="controls">
       <span class="status" id="status" role="status" aria-live="polite"></span>
-      <button class="toggle" id="names" type="button" aria-pressed="${document.body.classList.contains('names')}">${document.body.classList.contains('names') ? 'Hide names' : 'Show names'}</button>
+      <span class="ctl">
+        ${window.__SNAPSHOT__ ? '' : '<button class="toggle" id="share" type="button">Share your week</button>'}
+        <button class="toggle" id="names" type="button" aria-pressed="${document.body.classList.contains('names')}">${document.body.classList.contains('names') ? 'Hide names' : 'Show names'}</button>
+      </span>
     </div>`;
   }
 
@@ -297,7 +309,7 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   function mood(m) {
     const t = m.tone;
     if (!m.mood || !m.mood.scored) {
-      return sheet('How you sound', `<p class="note">Tone isn't set up yet.</p>`, `<p class="empty">Run <code>node tone.js teach</code>, then <code>node tone.js train</code> and <code>node ingest.js --rebuild</code>. A small model labels a sample of your messages once; after that every message is scored on this machine for free.</p>`);
+      return sheet('How you sound', `<p class="note">Tone isn't set up yet.</p>`, `<p class="empty">The mood model that ships with inkprint is missing from this install. Run <code>npx inkprint</code> again to put it back.</p>`);
     }
     const wk = m.mood.weeks.filter((w) => w.neg + w.flat + w.pos > 0).slice(narrow() ? -8 : -16);
     const colW = 28, gap = 8, h = 120;
@@ -319,7 +331,11 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     const margin = `
       <p class="note">Most of the time you sound <b>${esc(moods[0] ? moods[0][0] : 'flat')}</b>. <b>${pct(b.neg)}</b> of your messages read tense and <b>${pct(b.pos)}</b> upbeat.<span class="n">${num(m.mood.scored)} messages scored</span></p>
       ${tenseProj[0] ? `<p class="note">You sound most tense on <b>${esc(tenseProj[0][0])}</b> (${pct(tenseProj[0][1].neg)}) and least on <b>${esc(tenseProj[tenseProj.length - 1][0])}</b> (${pct(tenseProj[tenseProj.length - 1][1].neg)}).</p>` : ''}
-      <p class="note quiet">Tone comes from a local classifier trained on ${t ? num(t.labels) : 'a sample of'} of your messages${agree != null ? `; it matches the labeling model on tense / flat / upbeat ${pct(agree)} of the time` : ''}. Read it as a trend, not a verdict on any single message.</p>`;
+      ${m.toneModel === 'yours'
+        ? `<p class="note quiet">Tone comes from a local classifier trained on ${t ? num(t.labels) : 'a sample of'} of your messages${agree != null ? `; it matches the labeling model on tense / flat / upbeat ${pct(agree)} of the time` : ''}. Read it as a trend, not a verdict on any single message.</p>`
+        : `<p class="note quiet">For now the mood read uses a general model, trained on made-up work messages and run on this machine, so it knows work chat in general rather than how you in particular sound.</p>
+           ${window.__SNAPSHOT__ ? '' : `<p class="note quiet">Tuning it to your own messages uses about 120k tokens once, on your own plan, through your <code>claude</code> or <code>codex</code> CLI.</p>
+           <p><button class="toggle" id="tune" type="button">Tune it to me</button> <span class="status" id="tune-status" role="status"></span></p>`}`}`;
     const mix = moods.map(([k, v]) => `<tr><td>${esc(k)}</td><td style="width:60%"><span class="bar" style="width:${v * 100}%"></span></td><td class="num fig">${pct(v)}</td></tr>`).join('');
     const tp = tenseProj.slice(0, 8).map(([k, p]) => `<tr><td>${esc(k)}</td><td class="num fig">${pct(p.neg)}</td><td class="num fig">${pct(p.pos)}</td><td class="num fig">${num(p.n)}</td></tr>`).join('');
     return sheet('How you sound', margin, `
@@ -390,6 +406,97 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
       </div>`);
   }
 
+  const CH = { ai: 'To your AI', whatsapp: 'WhatsApp', telegram: 'Telegram', discord: 'Discord', email: 'Email', gchat: 'Google Chat', teams: 'Teams', slack: 'Slack' };
+
+  function voice(m) {
+    const v = m.voice || { cards: [], rules: [] };
+    if (!v.cards.length) return sheet('How you write', '<p class="note">No voice cards yet.</p>', '<p class="empty">Cards build from how you write to your AI, and from your own messages whenever your AI reads a chat or inbox for you. Nothing to set up; they fill in as you work.</p>');
+    const rules = v.rules.length
+      ? `<p class="note">You've told your AI ${v.rules.map((r) => `<b>${esc(r.label)}</b> (${r.count} times)`).join(', ')}. Drafts that break these get stopped before you see them.</p>`
+      : '';
+    const cards = v.cards.slice().sort((a, b) => (a.base - b.base) || (!!a.to - !!b.to) || b.sends - a.sends);
+    const rows = cards.map((c) => `<tr>
+      <td>${c.base ? 'To your AI' : esc(CH[c.channel] || c.channel)}${c.to ? `, ${c.group ? 'in' : 'to'} ${masked(c.to, true)}` : ''}</td>
+      <td class="num fig">${num(c.sends)}</td><td class="num fig">${c.words}</td>
+      <td class="num fig hide-sm">${c.base || c.channel === 'email' ? '' : pct(c.split)}</td>
+      <td class="num fig">${pct(c.greeting)}</td><td class="num fig">${pct(c.lower)}</td></tr>`).join('');
+    const chan = cards.filter((c) => !c.base && !c.to);
+    const shortest = chan.slice().sort((a, b) => a.words - b.words)[0];
+    const longest = chan.slice().sort((a, b) => b.words - a.words)[0];
+    const margin = `${rules}
+      ${shortest && longest && shortest !== longest ? `<p class="note">You write shortest on <b>${esc(CH[shortest.channel])}</b> (${shortest.words} words) and longest on <b>${esc(CH[longest.channel])}</b> (${longest.words}).</p>` : ''}
+      <p class="note quiet">Every draft your AI writes for you is checked against the card for that channel and person. Cards come from your own sent messages; ones your AI sent for you are left out.</p>`;
+    return sheet('How you write', margin, `<div class="scroll"><table class="ruled"><thead><tr><th>Where</th><th class="num">Messages</th><th class="num">Typical words</th><th class="num hide-sm">Split into several</th><th class="num">Greets</th><th class="num">Lowercase</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+  }
+
+  // The share card: drawn here, saved here, nothing uploaded. Names are swapped out unless you keep them.
+  function shareCard(m, keepNames) {
+    const W = 1080, H = 1350, c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    const css = getComputedStyle(document.documentElement);
+    const col = (v) => css.getPropertyValue(v).trim();
+    g.fillStyle = col('--pad'); g.fillRect(0, 0, W, H);
+    g.lineWidth = 1;
+    for (let x = 0; x <= W; x += 20) { g.strokeStyle = x % 100 ? col('--grid-minor') : col('--grid-major'); g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, H); g.stroke(); }
+    for (let y = 0; y <= H; y += 20) { g.strokeStyle = y % 100 ? col('--grid-minor') : col('--grid-major'); g.beginPath(); g.moveTo(0, y + .5); g.lineTo(W, y + .5); g.stroke(); }
+    g.fillStyle = col('--red'); g.fillRect(96, 0, 3, H);
+    const font = (w, px) => `${w} ${px}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const text = (t, x, y, w, px, color, maxW) => {
+      g.font = font(w, px); g.fillStyle = color || col('--ink');
+      const words = String(t).split(' '); let line = ''; let yy = y;
+      for (const wd of words) { const test = line ? line + ' ' + wd : wd; if (maxW && g.measureText(test).width > maxW && line) { g.fillText(line, x, yy); line = wd; yy += px * 1.3; } else line = test; }
+      g.fillText(line, x, yy); return yy + px * 1.3;
+    };
+    const w = m.thisWeek || { now: {}, base: {} };
+    const alias = new Map(); let n = 0;
+    const hide = (name, kind) => {
+      if (keepNames) return name;
+      if (kind === 'person') return 'a teammate';
+      if (!alias.has(name)) alias.set(name, 'Project ' + String.fromCharCode(65 + n++));
+      return alias.get(name);
+    };
+    let y = text('How I work with AI', 140, 170, 700, 64);
+    y = text(`Week of ${shortDate(w.start || m.range.to)}`, 140, y + 4, 400, 30, col('--ink-soft'));
+    const stat = (label, value, x) => { text(value, x, y + 120, 700, 76); text(label, x, y + 164, 400, 26, col('--ink-soft')); };
+    stat('messages this week', num(w.now.messages || 0), 140);
+    stat('day streak', String(m.you.streak.current), 480);
+    stat('typical words', String(m.words.base.medianWords), 740);
+    y += 260;
+    g.fillStyle = col('--ink'); g.fillRect(140, y, 800, 2); y += 70;
+    // A mix: what moved this week, two projects, one person, then your top rule.
+    const tells = [];
+    for (const x of (w.moved || []).slice(0, 1)) tells.push(x.text);
+    const comb = m.contexts.combined || [];
+    for (const d of comb.filter((x) => x.kind === 'project').slice(0, 2)) tells.push(d.text.replace(d.name, hide(d.name, 'project')));
+    // For people, message length mostly tracks pasted text, so pick a difference in how you talk instead.
+    const person = comb.find((x) => x.kind === 'person' && x.items.some((i) => i.metric !== 'medianWords'));
+    if (person) {
+      const lead = keepNames ? `When ${person.name} comes up, you` : 'When a certain teammate comes up, you';
+      const i = person.items.find((x) => x.metric !== 'medianWords');
+      tells.push(`${lead} ${i.phrase}.`);
+    }
+    if (m.voice && m.voice.rules && m.voice.rules[0]) tells.push(`My most repeated note to my AI: "${m.voice.rules[0].label}" (${m.voice.rules[0].count} times).`);
+    for (const t of tells.slice(0, 4)) { y = text(t, 140, y, 400, 34, col('--ink'), 800) + 30; }
+    text('made with inkprint, on my machine', 140, H - 90, 400, 26, col('--ink-soft'));
+    return c.toDataURL('image/png');
+  }
+
+  function openShare(m) {
+    let d = document.getElementById('share-dialog');
+    if (!d) {
+      d = document.createElement('dialog'); d.id = 'share-dialog'; d.className = 'share';
+      d.innerHTML = `<img alt="Your week with AI, as an image"><div class="row"><label><input type="checkbox" id="share-names"> Show real project and people names</label>
+        <span class="ctl"><button class="toggle" id="share-close" type="button">Close</button><a class="toggle" id="share-save" download="my-week-with-ai.png" style="text-decoration:none">Save image</a></span></div>`;
+      document.body.appendChild(d);
+      d.querySelector('#share-close').addEventListener('click', () => d.close());
+      d.querySelector('#share-names').addEventListener('change', () => draw());
+    }
+    const draw = () => { const url = shareCard(m, d.querySelector('#share-names').checked); d.querySelector('img').src = url; d.querySelector('#share-save').href = url; };
+    draw();
+    d.showModal();
+  }
+
   function render(m, force) {
     if (!m || !m.you || !m.you.prompts) {
       $('#pad').innerHTML = `<p class="empty">No messages found yet. This page reads Claude Code transcripts from <code>~/.claude/projects</code> and Codex sessions from <code>~/.codex/sessions</code>. Use either tool, then reload.</p>`;
@@ -397,11 +504,11 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
     }
     const status = () => { $('#status').innerHTML = window.__SNAPSHOT__ ? `Snapshot from ${new Date(m.generated).toLocaleString()}` : `<span class="dot" aria-hidden="true"></span>Live, updated ${new Date(m.generated).toLocaleTimeString()}`; };
     // Live updates only redraw when something you can see changed; focus stays where it was.
-    const sig = (x) => JSON.stringify([x.you.prompts, x.you.words, x.machine.layers, x.mood && x.mood.scored, narrow()]);
+    const sig = (x) => JSON.stringify([x.you.prompts, x.you.words, x.machine.layers, x.mood && x.mood.scored, x.toneModel, x.voice && x.voice.cards.length, narrow()]);
     if (last && force !== true && sig(last) === sig(m)) { last = m; status(); return; }
     const before = last && last.you.prompts;
     const focusId = document.activeElement && document.activeElement.id;
-    $('#pad').innerHTML = titleBlock(m) + differ(m) + when(m) + projects(m) + mood(m) + words(m) + people(m) + machine(m);
+    $('#pad').innerHTML = titleBlock(m) + differ(m) + when(m) + projects(m) + mood(m) + voice(m) + words(m) + people(m) + machine(m);
     if (before != null && before !== m.you.prompts) document.querySelectorAll('[data-k]').forEach((n) => n.classList.add('fresh'));
     last = m;
     status();
@@ -409,6 +516,12 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
       const on = document.body.classList.toggle('names');
       e.currentTarget.setAttribute('aria-pressed', String(on));
       e.currentTarget.textContent = on ? 'Hide names' : 'Show names';
+    });
+    if ($('#share')) $('#share').addEventListener('click', () => openShare(last));
+    if ($('#tune')) $('#tune').addEventListener('click', async (e) => {
+      e.currentTarget.disabled = true;
+      $('#tune-status').textContent = 'Tuning, this takes a few minutes...';
+      try { await fetch('/api/tune', { method: 'POST' }); } catch { $('#tune-status').textContent = "Couldn't start tuning; is the inkprint window in your terminal still open?"; }
     });
     if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus({ preventScroll: true });
   }
@@ -423,7 +536,15 @@ FORM: computation pad, grounded list position 3, staging: sheets separated by pe
   }
 
   load();
-  if (!window.__SNAPSHOT__ && window.EventSource) new EventSource('/api/stream').addEventListener('update', load);
+  if (!window.__SNAPSHOT__ && window.EventSource) {
+    const es = new EventSource('/api/stream');
+    es.addEventListener('update', load);
+    es.addEventListener('tune', (e) => {
+      const st = JSON.parse(e.data).state;
+      if ($('#tune-status')) $('#tune-status').textContent = st === 'running' ? 'Tuning, this takes a few minutes...' : st === 'done' ? 'Tuned to your messages, and every message has been scored again with it.' : 'Tuning failed. Is your claude or codex CLI signed in?';
+      if (st === 'done') load();
+    });
+  }
   let rt;
   let wasNarrow = narrow();
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (last && narrow() !== wasNarrow) { wasNarrow = narrow(); render(last, true); } }, 200); });

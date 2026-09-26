@@ -76,13 +76,13 @@ function status() {
 
 async function tune() {
   if (!has('--yes')) {
-    console.log('Tuning labels about 1,500 of your messages with a small model through your own `claude` (or `codex`) CLI,');
-    console.log('then trains a local classifier on them. It costs roughly 60k tokens once, on your plan.');
+    console.log('Tuning has a small model label 800 of your messages through your own `claude` (or `codex`) CLI,');
+    console.log('then trains a local classifier on them. It costs roughly 120k tokens once, on your plan.');
     console.log('Run `inkprint tune --yes` to go ahead.');
     return;
   }
   const tone = lib('usage/tone');
-  tone.teach(1500);
+  tone.teach(800);
   const s = tone.train();
   if (s) lib('usage/ingest').ingest({ rebuild: true });
 }

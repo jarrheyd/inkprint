@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__.*__(send_message|send_email|reply|forward|create_draft|update_draft|discord_send|discord_reply_to_forum|gmail_draft|gmail_send_email|outlook_send_mail|outlook_create_draft|outlook_create_reply_draft|outlook_create_reply_all_draft|outlook_update_draft|teams_send_channel_message|teams_reply_channel_message|teams_send_chat_message|slack_post_message|slack_reply_to_thread)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/inkprint.js\" hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
