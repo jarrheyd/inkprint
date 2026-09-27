@@ -25,6 +25,8 @@ claude plugin install inkprint@inkprint
 
 Then `/inkprint` opens the page. Pick one route; the plugin brings its own hook.
 
+The nightly run also saves the page as one file you can open without anything running: `local.nosync/dashboard.html` in your inkprint folder. Want it fresher than last night, say for an end-of-day review? `npx github:jarrheyd/inkprint snapshot` rebuilds it in a second with no AI calls and prints where it is.
+
 Undo everything:
 
 ```bash

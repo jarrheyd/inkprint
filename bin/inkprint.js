@@ -107,11 +107,12 @@ function check() {
 
 const commands = {
   setup, status, uninstall, check, nightly,
+  snapshot: () => { const f = lib('usage/rollup').snapshot(); if (!f) process.exit(1); console.log(f); },
   open: () => serve(true),
   report: () => execFileSync(process.execPath, [path.join(__dirname, '..', 'lib', 'usage', 'report.js')], { stdio: 'inherit', env: process.env }),
   tune: () => tune().catch((e) => { console.error(e.message); process.exit(1); }),
   hook: () => lib('voice/hook').main(),
 };
 
-if (!commands[cmd]) { console.error(`inkprint: unknown command "${cmd}". Try: open, report, check, tune, status, uninstall.`); process.exit(1); }
+if (!commands[cmd]) { console.error(`inkprint: unknown command "${cmd}". Try: open, report, snapshot, check, tune, status, uninstall.`); process.exit(1); }
 commands[cmd]();
