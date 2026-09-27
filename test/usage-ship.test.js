@@ -40,3 +40,14 @@ test('serve: page and metrics come up on localhost', async () => {
     assert.strictEqual((await get(port, '/nope')).status, 404);
   } finally { child.kill(); }
 });
+
+test('store: a write iCloud is holding is retried, any other error is not', () => {
+  const store = require('../lib/usage/store');
+  let tries = 0;
+  const out = store.busyRetry(() => { if (++tries < 2) { const e = new Error('Unknown system error -11'); e.errno = -11; throw e; } return 'written'; });
+  assert.strictEqual(out, 'written');
+  assert.strictEqual(tries, 2);
+  let other = 0;
+  assert.throws(() => store.busyRetry(() => { other++; const e = new Error('no such file'); e.code = 'ENOENT'; throw e; }), /no such file/);
+  assert.strictEqual(other, 1);
+});
