@@ -283,8 +283,8 @@ FIRST VIEWPORT: the page name and live status, then the week sentence: messages 
     if (!w) return panel(m, 'week', 'Your messages', { big: `<span data-k="week"><b>${num(y.prompts)}</b></span> messages over <b>${y.activeDays}</b> days.` });
     const usual = w.base && w.base.messages ? Math.round(w.base.messages) : 0;
     // The arrow compares your pace so far with a usual full week, so a Tuesday never reads as a drop.
-    const pace = w.daysIn ? (w.now.messages / w.daysIn) * 7 : w.now.messages;
-    const big = `<span data-k="week"><b>${num(w.now.messages)}</b></span>${arrow(pace, usual, false, num)} messages so far this week${usual ? `, against <b>${num(usual)}</b> in a usual week` : ''}.`;
+    const pace = w.daysIn >= 3 ? (w.now.messages / w.daysIn) * 7 : 0; // no arrow on Monday or Tuesday: too early to call
+    const big = `<span data-k="week"><b>${num(w.now.messages)}</b></span>${pace ? arrow(pace, usual, false, num) : ''} messages so far this week${usual ? `, against <b>${num(usual)}</b> in a usual week` : ''}.`;
     const moodShown = m.mood && m.mood.scored;
     const sub = (w.moved || []).filter((x) => !(moodShown && x.metric === 'neg')).slice(0, 2).map((x) => `<p class="sub">${ink(x.text)}</p>`).join('');
     const i0 = y.series.findIndex((d) => d.day === w.start);
