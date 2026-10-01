@@ -156,3 +156,92 @@ test('setup: hooks added once, removed cleanly, settings byte-identical after un
     assert.ok(!fs.existsSync(path.join(tmp, 'app')));
   });
 });
+
+// ---- words: your vocabulary against English, pasted drafts kept out ----
+
+test('pasted: long and laid out is an AI draft, long and plain is yours, short lists are fine', () => {
+  const { isPasted } = require(path.join(V, 'sends'));
+  const long = 'okay so we need to check this again before friday '.repeat(12);
+  assert.strictEqual(isPasted(long), false, 'a long message you typed stays');
+  assert.strictEqual(isPasted(`## Summary\n${long}\n- first point\n- second point`), true);
+  assert.strictEqual(isPasted(`**Cost.** ${long}`), false, 'one mark is not a layout');
+  assert.strictEqual(isPasted(`**Cost.** ${long}\n**Risk.** ${long}`), true, 'two bold labels are');
+  assert.strictEqual(isPasted('- milk\n- eggs\n- rice'), false, 'short lists are how people type');
+});
+
+test('words: common in English and absent from yours warns; names, jargon and your own words pass', () => {
+  const words = require(path.join(V, 'words'));
+  const vocab = { total: 200000, sends: 9000, counts: { okay: 700, need: 500, check: 370, build: 60, flag: 20, behind: 30, set: 150, told: 60, against: 1 }, ai: { grounded: 4 } };
+  const found = (t) => words.scoreWords(t, vocab).map((f) => f.word);
+  assert.deepStrictEqual(found('The build sits behind a flag.'), ['sits']);
+  assert.deepStrictEqual(found('okay need to check the build'), [], 'your own words pass');
+  assert.deepStrictEqual(found('We told Rey that LaunchDarkly is set up at Medical City.'), [], 'names and jargon are rare in English too');
+  assert.ok(found('We tested it against the old one.').includes('against'), 'used far less than English expects');
+  assert.ok(found('A grounded plan.').includes('grounded'), 'in AI drafts sent as you, never in your own');
+  assert.match(words.scoreWords('It sits there.', vocab)[0].text, /"sits": you've never used it in 200k words of your own; English would expect about 3/);
+  assert.deepStrictEqual(words.scoreWords('It sits there.', null), [], 'no word list yet: nothing to say');
+});
+
+test('words: findings warn and never block, on a chat card or a document', () => {
+  const vocab = { total: 200000, sends: 9000, counts: { nice: 90, one: 400 }, ai: {} };
+  const c = card.build(chatRows(60), { channel: 'discord' });
+  const r = check('therefore sits', c, { vocab });
+  assert.ok(r.findings.some((f) => f.kind === 'word' && !f.hard));
+  assert.strictEqual(r.block, false, 'two word warnings are not two misses');
+  assert.strictEqual(r.hard, 0);
+});
+
+test('build + doc check + hook: word list built from clean sends, a document warns once then goes through', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'helm-voice-'));
+  const e = env(tmp);
+  withEnv(e, () => {
+    fresh();
+    for (const k of Object.keys(require.cache)) if (k.startsWith(ROOT + path.sep + 'lib')) delete require.cache[k];
+    const sends = require(path.join(V, 'sends'));
+    const D = sends.dirs(e.HELM_USAGE_DIR);
+    fs.mkdirSync(D.sends, { recursive: true });
+    const t0 = Date.parse('2026-01-01T00:00:00Z');
+    const rows = [];
+    for (let i = 0; i < 6000; i++) rows.push({ channel: 'discord', chat: 'team', to: '', ts: new Date(t0 + i * 3600 * 1000).toISOString(), text: `${i} okay need to check this one again sige send it later today thanks` });
+    // Three AI drafts pasted in and sent: they must not teach the cards anything.
+    const draft = (i) => `## Update ${i}\nThe service sits behind the gateway and the remaining work is grounded in the audit. ${'This paragraph pads the draft past the length where a typed message usually stops. '.repeat(6)}\n- first\n- second`;
+    for (let i = 0; i < 3; i++) rows.push({ channel: 'discord', chat: 'team', to: '', ts: new Date(t0 + (7000 + i * 30) * 3600 * 1000).toISOString(), text: draft(i) });
+    fs.writeFileSync(D.inbox, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+    const out = require(path.join(V, 'build')).build();
+    assert.ok(out.cards.includes('words'));
+    const vocab = JSON.parse(fs.readFileSync(path.join(D.cards, 'words.json'), 'utf8'));
+    assert.strictEqual(vocab.sends, 6000, 'pasted drafts are left out of your words');
+    assert.strictEqual(vocab.counts.sits, undefined);
+    assert.strictEqual(vocab.ai.sits, 3, 'and kept as the contrast');
+    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(D.cards, 'discord.json'), 'utf8')).sends, 6000, 'and out of the channel card');
+    const md = fs.readFileSync(path.join(e.HELM_VOICE_CARDS, 'words.md'), 'utf8');
+    assert.match(md, /## Words you reach for[\s\S]*- check \(6000/);
+    assert.match(md, /## Words AI drafts use and you never do[\s\S]*- sits \(in 3 drafts\)/);
+
+    const cli = (args, input) => spawnSync(process.execPath, [path.join(ROOT, 'bin', 'inkprint.js'), 'check', ...args], { input, env: { ...process.env, ...e }, encoding: 'utf8' });
+    const doc = cli(['--channel', 'doc'], 'The release sits behind a flag, therefore nothing changes for Rey at Medical City.');
+    assert.strictEqual(doc.status, 0, 'a document never blocks');
+    assert.match(doc.stdout, /check on your documents/);
+    assert.match(doc.stdout, /"sits"/);
+    assert.match(doc.stdout, /"therefore"/);
+    assert.doesNotMatch(doc.stdout, /"rey"|"medical"/);
+    assert.match(cli(['--channel', 'doc'], 'okay need to check this one again').stdout, /fits how you write/);
+
+    const hook = (payload) => spawnSync(process.execPath, [path.join(V, 'hook.js')], { input: JSON.stringify(payload), env: { ...process.env, ...e }, encoding: 'utf8' });
+    const drive = { tool_name: 'mcp__abc__create_file', tool_input: { title: 'Plan', contentMimeType: 'text/html', textContent: '<h1>Plan</h1><p>The release sits behind a flag, therefore nothing changes.</p>' } };
+    const first = hook(drive);
+    assert.strictEqual(first.status, 2, 'first time: pause with the warning');
+    assert.match(first.stderr, /"sits"[\s\S]*send the same text again/);
+    assert.strictEqual(hook(drive).status, 0, 'same text again: through');
+    assert.strictEqual(hook({ ...drive, tool_input: { ...drive.tool_input, textContent: '<p>okay need to check this one again</p>' } }).status, 0, 'your own words: no pause');
+    assert.strictEqual(hook({ tool_name: 'mcp__abc__create_file', tool_input: { title: 'Deck', base64Content: 'UEsDBA==' } }).status, 0, 'a binary upload has no words to check');
+    const page = path.join(tmp, 'page.html');
+    fs.writeFileSync(page, '<html><style>p{color:red}</style><p>The plan sits here, therefore we wait.</p></html>');
+    assert.strictEqual(hook({ tool_name: 'Artifact', tool_input: { file_path: page } }).status, 2, 'a published page is a document');
+    assert.strictEqual(hook({ tool_name: 'Artifact', tool_input: { action: 'read', url: 'https://x' } }).status, 0, 'reading one is not');
+    // A chat send with a word warning and nothing else wrong pauses once too.
+    const chat = { tool_name: 'mcp__discord__discord_send', tool_input: { message: 'okay therefore check this' } };
+    assert.strictEqual(hook(chat).status, 2);
+    assert.strictEqual(hook(chat).status, 0);
+  });
+});

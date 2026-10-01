@@ -98,7 +98,7 @@ function check() {
   const get = (k) => { const i = args.indexOf(k); return i >= 0 ? args.splice(i, 2)[1] : undefined; };
   const channel = get('--channel'); const to = get('--to');
   const text = args.length ? args.join(' ') : fs.readFileSync(0, 'utf8');
-  if (!channel) { console.error('usage: inkprint check --channel <whatsapp|telegram|discord|email|gchat|teams|slack> [--to name] "draft"'); process.exit(1); }
+  if (!channel) { console.error('usage: inkprint check --channel <whatsapp|telegram|discord|email|gchat|teams|slack|doc> [--to name] "draft"'); process.exit(1); }
   const ck = lib('voice/check');
   const r = ck.run(channel, to, text);
   console.log(ck.format(r));
