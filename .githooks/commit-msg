@@ -1,0 +1,5 @@
+#!/bin/sh
+# Blocks a commit message that carries private data.
+STRICT=""
+[ "$(git config --bool helm.requireDenylist)" = "true" ] && STRICT="--strict"
+node scripts/leak-check.js --message "$1" $STRICT || exit 1

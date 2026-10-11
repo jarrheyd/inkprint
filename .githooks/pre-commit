@@ -1,0 +1,6 @@
+#!/bin/sh
+# Blocks a commit that would add private data. See scripts/leak-check.js.
+STRICT=""
+[ "$(git config --bool helm.requireDenylist)" = "true" ] && STRICT="--strict"
+node scripts/leak-check.js --staged $STRICT || exit 1
+node scripts/leak-check.js --ident $STRICT || exit 1

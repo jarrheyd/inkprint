@@ -1,0 +1,5 @@
+#!/bin/sh
+# Last gate before anything leaves the machine: every version of every file, and every commit message.
+STRICT=""
+[ "$(git config --bool helm.requireDenylist)" = "true" ] && STRICT="--strict"
+node scripts/leak-check.js --history $STRICT || exit 1
